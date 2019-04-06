@@ -103,7 +103,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				
 		        }
 
-
+		        inverseIntegerTransform();
 				extractFrames();
 				separateFrames();
 
@@ -370,6 +370,80 @@ public class mainWindow extends JFrame implements ActionListener{
 			res[3][1] = (int) Math.round(intRes2[3][1]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
 			res[3][2] = (int) Math.round(intRes2[3][2]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
 			res[3][3] = (int) Math.round(intRes2[3][3]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
+		}
+		
+		return res;
+	}
+	
+	public static int[][] inverseIntegerTransform(/*int [][] F*/) {
+		double [][] HInv = {{1,1,1,1/2},{1,1/2,-1,-1},{1,-1/2,-1,1},{1,-1,1,-1/2}};
+		double [][] HtInv = {{1,1,1,1},{1,1/2,-1/2,-1},{1,-1,-1,1},{1/2,-1,1,-1/2}};
+		double [][] V = {{10,16,13},{11,18,14},{13,20,16},{14,23,18},{16,25,20},{18,29,23}};
+		double [][] intRes = new double[4][4];
+		double [][] intRes2 = new double[4][4];
+		double [][] intRes3 = new double[4][4];
+		int [][] res = new int[4][4];
+		int QP = 0;
+		
+		int [][] F = {{507,-12,-2,2},{0,-7,-14,5},{2,0,-8,-11},{-1,8,4,3}};
+		
+		if (QP >= 0 && QP < 6) {
+			intRes[0][0] = F[0][0]*V[QP][0];
+			intRes[0][1] = F[0][1]*V[QP][2];
+			intRes[0][2] = F[0][2]*V[QP][0];
+			intRes[0][3] = F[0][3]*V[QP][2];
+			intRes[1][0] = F[1][0]*V[QP][2];
+			intRes[1][1] = F[1][1]*V[QP][1];
+			intRes[1][2] = F[1][2]*V[QP][2];
+			intRes[1][3] = F[1][3]*V[QP][1];
+			intRes[2][0] = F[2][0]*V[QP][0];
+			intRes[2][1] = F[2][1]*V[QP][2];
+			intRes[2][2] = F[2][2]*V[QP][0];
+			intRes[2][3] = F[2][3]*V[QP][2];
+			intRes[3][0] = F[3][0]*V[QP][2];
+			intRes[3][1] = F[3][1]*V[QP][1];
+			intRes[3][2] = F[3][2]*V[QP][2];
+			intRes[3][3] = F[3][3]*V[QP][1];
+		}
+		else {
+			intRes[0][0] = F[0][0]*(V[QP%6][0]*(1 << QP/6));
+			intRes[0][1] = F[0][1]*(V[QP%6][2]*(1 << QP/6));
+			intRes[0][2] = F[0][2]*(V[QP%6][0]*(1 << QP/6));
+			intRes[0][3] = F[0][3]*(V[QP%6][2]*(1 << QP/6));
+			intRes[1][0] = F[1][0]*(V[QP%6][2]*(1 << QP/6));
+			intRes[1][1] = F[1][1]*(V[QP%6][1]*(1 << QP/6));
+			intRes[1][2] = F[1][2]*(V[QP%6][2]*(1 << QP/6));
+			intRes[1][3] = F[1][3]*(V[QP%6][1]*(1 << QP/6));
+			intRes[2][0] = F[2][0]*(V[QP%6][0]*(1 << QP/6));
+			intRes[2][1] = F[2][1]*(V[QP%6][2]*(1 << QP/6));
+			intRes[2][2] = F[2][2]*(V[QP%6][0]*(1 << QP/6));
+			intRes[2][3] = F[2][3]*(V[QP%6][2]*(1 << QP/6));
+			intRes[3][0] = F[3][0]*(V[QP%6][2]*(1 << QP/6));
+			intRes[3][1] = F[3][1]*(V[QP%6][1]*(1 << QP/6));
+			intRes[3][2] = F[3][2]*(V[QP%6][2]*(1 << QP/6));
+			intRes[3][3] = F[3][3]*(V[QP%6][1]*(1 << QP/6));
+		}
+		
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+                for (int k = 0; k < 4; k++) {
+                	intRes2[i][j] += intRes[i][k] * HtInv[k][j];
+                }
+			}
+		}
+		
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+                for (int k = 0; k < 4; k++) {
+                	intRes3[i][j] += HInv[i][k] * intRes2[k][j];
+                }
+			}
+		}
+
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+				res[i][j] = (int) Math.round(intRes3[i][j]/(1 << 6));
+			}
 		}
 		
 		return res;
