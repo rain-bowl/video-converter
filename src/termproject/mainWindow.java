@@ -103,15 +103,16 @@ public class mainWindow extends JFrame implements ActionListener{
 				
 		        }
 
+
 				extractFrames();
 				separateFrames();
 
 				// I-Frames Encoding
 				convertYUV(0);
 				subSampling(YUVIFrames, 0);
-				//DCT(ChromaIFrames, 0);
+		        //TESTING: integerTransform();
 				
-				test();
+				//test();
 			}
 		}
 	}
@@ -307,41 +308,72 @@ public class mainWindow extends JFrame implements ActionListener{
 		return res;
     }
 	
-	 public static double[][] DCT(int f[][]) {
-	        double[][] F = new double[8][8];
-	        double Cu = 0;
-	        double Cv = 0;
-	        double partialDCT = 0;
-	        double sum = 0;
-
-	        for (int u = 0; u < 8; u++) {
-	            for (int v = 0; v < 8; v++) {
-		            if (u == 0) {
-		                Cu = Math.sqrt(2) / 2;
-		            } else {
-		                Cu = 1;
-		            }
+	public static int[][] integerTransform(int [][] f) {
+		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
+		int [][] Ht = {{1,2,1,1},{1,1,-1,-2},{1,-1,-1,2},{1,-2,1,-1}};
+		double [][] M = {{13107,5243,8066},{11916,4660,7490},{10082,4194,6554},{9362,3647,5825},{8192,3355,5243},{7282,2893,4559}};
+		double [][] intRes = new double[4][4];
+		double [][] intRes2 = new double[4][4];
+		int [][] res = new int[4][4];
+		int QP = 6;
 		
-		            if (v == 0) {
-		                Cv = Math.sqrt(2) / 2;
-		            } else {
-		                Cv = 1;
-		            }
+		//int [][] f = {{72,82,85,79},{74,75,86,82},{84,73,78,80},{77,81,76,84}};
 		
-		            sum = 0;
-		            for (int i = 0; i < 8; i++) {
-		                for (int j = 0; j < 8; j++) {
-			                partialDCT = Math.cos((2 * i + 1) * u * Math.PI / 16) * Math.cos((2 * j + 1) * v * Math.PI / 16)
-			                    * (f[i][j]);
-			                sum = sum + partialDCT;
-		                }
-		            }
-		            F[u][v] = (Cu * Cv * sum) / 4;
-	            }
-	        }
-	        return F;
-	    }
-
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+                for (int k = 0; k < 4; k++) {
+                	intRes[i][j] += f[i][k] * Ht[k][j];
+                }
+			}
+		}
+		
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<4; j++) {
+                for (int k = 0; k < 4; k++) {
+                	intRes2[i][j] += H[i][k] * intRes[k][j];
+                }
+			}
+		}
+		
+		if (QP >= 0 && QP < 6) {
+			res[0][0] = (int) Math.round(intRes2[0][0]*(M[QP][0]/(1 << 15)));
+			res[0][1] = (int) Math.round(intRes2[0][1]*(M[QP][2]/(1 << 15)));
+			res[0][2] = (int) Math.round(intRes2[0][2]*(M[QP][0]/(1 << 15)));
+			res[0][3] = (int) Math.round(intRes2[0][3]*(M[QP][2]/(1 << 15)));
+			res[1][0] = (int) Math.round(intRes2[1][0]*(M[QP][2]/(1 << 15)));
+			res[1][1] = (int) Math.round(intRes2[1][1]*(M[QP][1]/(1 << 15)));
+			res[1][2] = (int) Math.round(intRes2[1][2]*(M[QP][2]/(1 << 15)));
+			res[1][3] = (int) Math.round(intRes2[1][3]*(M[QP][1]/(1 << 15)));
+			res[2][0] = (int) Math.round(intRes2[2][0]*(M[QP][0]/(1 << 15)));
+			res[2][1] = (int) Math.round(intRes2[2][1]*(M[QP][2]/(1 << 15)));
+			res[2][2] = (int) Math.round(intRes2[2][2]*(M[QP][0]/(1 << 15)));
+			res[2][3] = (int) Math.round(intRes2[2][3]*(M[QP][2]/(1 << 15)));
+			res[3][0] = (int) Math.round(intRes2[3][0]*(M[QP][2]/(1 << 15)));
+			res[3][1] = (int) Math.round(intRes2[3][1]*(M[QP][1]/(1 << 15)));
+			res[3][2] = (int) Math.round(intRes2[3][2]*(M[QP][2]/(1 << 15)));
+			res[3][3] = (int) Math.round(intRes2[3][3]*(M[QP][1]/(1 << 15)));
+		}
+		else {
+			res[0][0] = (int) Math.round(intRes2[0][0]*(M[QP%6][0]/(1 << QP/6)/(1 << 15)));
+			res[0][1] = (int) Math.round(intRes2[0][1]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[0][2] = (int) Math.round(intRes2[0][2]*(M[QP%6][0]/(1 << QP/6)/(1 << 15)));
+			res[0][3] = (int) Math.round(intRes2[0][3]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[1][0] = (int) Math.round(intRes2[1][0]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[1][1] = (int) Math.round(intRes2[1][1]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
+			res[1][2] = (int) Math.round(intRes2[1][2]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[1][3] = (int) Math.round(intRes2[1][3]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
+			res[2][0] = (int) Math.round(intRes2[2][0]*(M[QP%6][0]/(1 << QP/6)/(1 << 15)));
+			res[2][1] = (int) Math.round(intRes2[2][1]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[2][2] = (int) Math.round(intRes2[2][2]*(M[QP%6][0]/(1 << QP/6)/(1 << 15)));
+			res[2][3] = (int) Math.round(intRes2[2][3]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[3][0] = (int) Math.round(intRes2[3][0]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[3][1] = (int) Math.round(intRes2[3][1]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
+			res[3][2] = (int) Math.round(intRes2[3][2]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
+			res[3][3] = (int) Math.round(intRes2[3][3]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
+		}
+		
+		return res;
+	}
 	
 	public void test() {
 		
