@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.JFileChooser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.DoubleStream;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FrameGrabber;
@@ -49,7 +50,8 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	//Video Properties
 	int width, height;
-
+    int YValues[], UValues[], VValues[], inputValues[];
+    
 	//Set IframeDistance
 	int IframeDistance = 10;
 
@@ -161,10 +163,10 @@ public class mainWindow extends JFrame implements ActionListener{
 			height = videoFrames.get(i).getHeight(null);
 
 			ArrayList<int[]> currentYUVFrame = new ArrayList<int[]>();
-			int[] inputValues = new int[width*height];
-			int[] YValues = new int[width*height];
-			int[] UValues = new int[width*height];
-			int[] VValues = new int[width*height];
+			inputValues = new int[width*height];
+			YValues = new int[width*height];
+			UValues = new int[width*height];
+			VValues = new int[width*height];
 
 			// Grab Original Image Pixel Values
 			PixelGrabber grabber = new PixelGrabber(videoFrames.get(i).getSource(), 0, 0, width, height, inputValues, 0, width);
@@ -261,14 +263,14 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	}
 
-    // split image input into blocks of 8x8
-	public ArrayList<ArrayList<int[][]>> eightBlocks()
+    // split image input into blocks of size x size (ex size = 8, 8 x 8 blocks)
+	public ArrayList<ArrayList<int[][]>> blocker(int size)
     {
-		int newWidth = ((int)width/8)*8;
-		int newHeight = ((int)height/8)*8;
+		int newWidth = ((int)width/size)*size;
+		int newHeight = ((int)height/size)*size;
 		int xcount = 0;
 		int ycount = 0;
-		int blockNum = newWidth/8 * newHeight/8;
+		int blockNum = newWidth/size * newHeight/size;
 		ArrayList<ArrayList<int[][]>> res = new ArrayList<ArrayList<int[][]>>();
 		ArrayList<int[][]> resY = new ArrayList<int[][]>();
 		ArrayList<int[][]> resU = new ArrayList<int[][]>();
@@ -276,23 +278,23 @@ public class mainWindow extends JFrame implements ActionListener{
 
     	for (int x = 0; x < blockNum; x++)
     	{
-            int[][] blockY = new int[8][8];
-            int[][] blockU = new int[8][8];
-            int[][] blockV = new int[8][8];
+            int[][] blockY = new int[size][size];
+            int[][] blockU = new int[size][size];
+            int[][] blockV = new int[size][size];
 
-            for (int e = 0; e < 8; e++)
+            for (int e = 0; e < size; e++)
             {
-                for (int f = 0; f < 8; f++)
+                for (int f = 0; f < size; f++)
                 {
                     if (xcount % newWidth == 0 && x != 0 && xcount != 0)
                     {
-                        ycount += 8;
+                        ycount += size;
                         xcount = 0;
                     }
             
-//                    blockY[e][f] = YValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
-//                    blockU[e][f] = UValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
-//                    blockV[e][f] = VValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
+                    blockY[e][f] = YValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+                    blockU[e][f] = UValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+                    blockV[e][f] = VValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
                 }
                 xcount++;
             }
@@ -307,6 +309,73 @@ public class mainWindow extends JFrame implements ActionListener{
     		
 		return res;
     }
+	
+	// performs intra prediction on 4x4 block (5x5 block used to get neighbouring info
+	public static ArrayList<int[][]> intra(int f[][]) {
+		ArrayList<int[][]> result = new ArrayList<int[][]>();
+		int[][] current = new int[4][4];
+
+		// vertical mode, set all predicted pixels in column A to be pixel A, B as B, & etc.
+		for (int y = 0; y < 4; y++) {
+			current[0][y] = f[1][0]; // f[1][0] == pixel A 	[M][A][B][C][D]
+			current[1][y] = f[2][0];				 	   	 // [I] |  |  |  | 
+			current[2][y] = f[3][0];		   			  	 // [J] |  |  |  | 
+			current[3][y] = f[4][0];					 	 // [K] |  |  |  | 
+		}												  	 // [L] V  V  V  V 
+		result.add(current);
+		
+		// horizontal mode, set all predicted in row I as pixel I, J as J, etc.
+		for (int x = 0; x < 4; x++) {
+			current[x][0] = f[0][1];// f[0][1] == pixel I 	[M][A][B][C][D]
+			current[x][1] = f[0][2];				 	   	 // [I] --------->
+			current[x][2] = f[0][3];				 	   	 // [J] --------->
+			current[x][3] = f[0][4];				 	   	 // [K] --------->
+		}											 	 	 // [L] --------->
+		result.add(current);
+		
+		// average mode, set all predicted in 4x4 block as average of 8 neighbours (A-D, I-L)
+		int average = (f[1][0] + f[2][0] + f[3][0] + f[4][0] + f[0][1] + f[0][2] + f[0][3] + f[0][4]) / 8;
+		
+		for (int x = 0; x < 4; x++) {
+			current[x][0] = average;
+			current[x][1] = average;
+			current[x][2] = average;
+			current[x][3] = average;
+		}
+		result.add(current);
+		
+		return result;
+	}
+	
+	public static int[][] residuals(ArrayList<int[][]> predicted, int[][] actual) {
+		ArrayList<int[][]> residuals = new ArrayList<int[][]>();
+		int[] errorSum = new int[predicted.size()];
+		int[][] error = new int[4][4];
+		int[][] current = new int[4][4];
+		int ideal = 0;
+		
+		// get residual values (prediction error) and save
+		for (int q = 0; q < predicted.size(); q++) {
+			current = predicted.get(q);
+			
+			for (int y = 0; y < 4; y++) {
+				for (int x = 0; x < 4; x++) {
+					error[x][y] = actual[x][y] - current[x][y];
+					errorSum[q] += error[x][y];
+				}
+			}
+			residuals.add(error);
+		}
+		
+		// find index of smallest error
+		for (int q = 1; q < predicted.size(); q++) {
+			if (errorSum[q] < errorSum[ideal]) {
+				ideal = q;
+			}
+		}
+		
+		return residuals.get(ideal);
+	}
 	
 	public static int[][] integerTransform(int [][] f) {
 		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
@@ -449,6 +518,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		return res;
 	}
 	
+	
 	public void test() {
 		
 		JPanel OutputImg;
@@ -507,6 +577,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		frame.setVisible(true);
 	}
 
+	
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
