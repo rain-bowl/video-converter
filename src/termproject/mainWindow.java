@@ -63,7 +63,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	int IframeDistance = 9;
 
 	// MAX_FRAMES must be a number of (9*n)+1 frames
-	int MAX_FRAMES = 181;
+	int MAX_FRAMES = 10;
 
 	//Set the Quality Factor
 	int QP = 6;
@@ -408,28 +408,30 @@ public class mainWindow extends JFrame implements ActionListener{
 	}
 
 	public void subSampling(ArrayList<ArrayList<int[]>> inputYUVFrames, int currentMethod) {
-
+		int newWidth = ((int) Math.floor(width/4)) * 4;
+		int newHeight = ((int) Math.floor(height/4)) * 4;
+		
 		for(int i=0; i<inputYUVFrames.size(); i++) {
 			ArrayList<int[]> outputRes = new ArrayList<int[]>();
 
 			// set UV values for chroma use
-			int[] UChroma = new int[width*height];
-			int[] VChroma = new int[width*height];
+			int[] UChroma = new int[newWidth*newHeight];
+			int[] VChroma = new int[newWidth*newHeight];
 
 			// adding every other U and V value to a block of 4
-			for (int y = 1; y < height; y+=2)
+			for (int y = 1; y < newHeight; y+=2)
 			{
-				for (int x = 1; x < width; x+=2)
+				for (int x = 1; x < newWidth; x+=2)
 				{
-					UChroma[((y - 1)*width + (x - 1))] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
-					UChroma[((y - 1)*width + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
-					UChroma[(y*width + (x - 1))] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
-					UChroma[(y*width + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
+					UChroma[((y - 1)*newWidth + (x - 1))] = (inputYUVFrames.get(i).get(1)[(y - 1)*newWidth + (x - 1)]);
+					UChroma[((y - 1)*newWidth + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*newWidth + (x - 1)]);
+					UChroma[(y*newWidth + (x - 1))] = (inputYUVFrames.get(i).get(1)[(y - 1)*newWidth + (x - 1)]);
+					UChroma[(y*newWidth + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*newWidth + (x - 1)]);
 
-					VChroma[((y - 1)*width + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
-					VChroma[((y - 1)*width + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
-					VChroma[(y*width + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
-					VChroma[(y*width + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);    	
+					VChroma[((y - 1)*newWidth + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*newWidth + (x - 1)]);
+					VChroma[((y - 1)*newWidth + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*newWidth + (x - 1)]);
+					VChroma[(y*newWidth + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*newWidth + (x - 1)]);
+					VChroma[(y*newWidth + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*newWidth + (x - 1)]);    	
 				}
 			}
 
@@ -457,11 +459,11 @@ public class mainWindow extends JFrame implements ActionListener{
 	// split image input into blocks of size x size (ex size = 8, 8 x 8 blocks)
 	public ArrayList<ArrayList<int[][]>> blocker(ArrayList<int[]> frame, int size)
 	{
-		int newWidth = ((int)width/size)*size;
-		int newHeight = ((int)height/size)*size;
+		int newWidth = ((int) Math.floor(width/size)) * size;
+		int newHeight = ((int) Math.floor(height/size)) * size;
 		int xcount = 0;
 		int ycount = 0;
-		int blockNum = newWidth/size * newHeight/size;
+		int blockNum = (newWidth * newHeight) / (size * size);
 		ArrayList<ArrayList<int[][]>> res = new ArrayList<ArrayList<int[][]>>();
 		ArrayList<int[][]> resY = new ArrayList<int[][]>();
 		ArrayList<int[][]> resU = new ArrayList<int[][]>();
@@ -496,7 +498,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			resU.add(blockU);
 			resV.add(blockV);
 		}
-
+	
 		res.add(resY);
 		res.add(resU);
 		res.add(resV);
@@ -511,10 +513,10 @@ public class mainWindow extends JFrame implements ActionListener{
     	ArrayList<int[][]> Ublocks = frame.get(1);
     	ArrayList<int[][]> Vblocks = frame.get(2);
 
-    	int blockSize = Yblocks.get(0).length;
-    	int blockDimension = (int) Math.sqrt(blockSize);
-    	int newWidth = ((int) width/blockDimension) * blockDimension;
-    	int newHeight = ((int) height/blockDimension) * blockDimension;
+    	int blockDimension = Yblocks.get(0).length;
+    	int blockSize = blockDimension * blockDimension;
+    	int newWidth = ((int) Math.floor(width/blockDimension)) * blockDimension;
+    	int newHeight = ((int) Math.floor(height/blockDimension)) * blockDimension;
     	int xcount = 0;
     	int count = 0;
 
@@ -526,6 +528,8 @@ public class mainWindow extends JFrame implements ActionListener{
     	int[] resU = new int[newWidth * newHeight];
     	int[] resV = new int[newWidth * newHeight];
 
+//    	System.out.println("		blockNum: " + blockNum + "		blockSize: " + blockSize + "		blockDimension: " + blockDimension);
+    	
     	for (int x = 0; x < Yblocks.size(); x++) { // iterate through each block
 
     		unblockedY = flatten2D(Yblocks.get(x));
@@ -554,17 +558,23 @@ public class mainWindow extends JFrame implements ActionListener{
 				{
 					count += newWidth;
 				}
-
-				resY[count + remainder + xcount] = unblockedY[y];
-				resU[count + remainder + xcount] = unblockedU[y];
-				resV[count + remainder + xcount] = unblockedV[y];
+				
+				int index = count + remainder + xcount;
+				if (index > newWidth * newHeight) {
+					break;
+				}
+//				System.out.println("index: " + index + "	count: " + count  + "	remainder: "  + remainder + "	xcount: " + xcount) ;
+				resY[index] = unblockedY[y];
+				resU[index] = unblockedU[y];
+				resV[index] = unblockedV[y];
 			}
+			count = 0;
+//			System.out.println("newWidth = " + newWidth + "x= " + x + "	Yblocks.size(): " + Yblocks.size());
     	}
 
     	res.add(resY);
     	res.add(resU);
     	res.add(resV);
-
     	return res;
     }
 
@@ -974,17 +984,17 @@ public class mainWindow extends JFrame implements ActionListener{
 		OutputImg.add(m_panelImgOutputYTransform);
 
 		m_panelImgOutputUTransform = new IMGPanel();
-		m_panelImgOutputUTransform.setLocation(940, 10);
+		m_panelImgOutputUTransform.setLocation(940, 220);
 		m_panelImgOutputUTransform.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputUTransform);
 		
 		m_panelImgOutputVTransform = new IMGPanel();
-		m_panelImgOutputVTransform.setLocation(940, 10);
+		m_panelImgOutputVTransform.setLocation(940, 430);
 		m_panelImgOutputVTransform.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputVTransform);
 		
 		m_panelImgOutputYUVTransform = new IMGPanel();
-		m_panelImgOutputYUVTransform.setLocation(940, 10);
+		m_panelImgOutputYUVTransform.setLocation(940, 640);
 		m_panelImgOutputYUVTransform.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputYUVTransform);
 		
@@ -1000,6 +1010,8 @@ public class mainWindow extends JFrame implements ActionListener{
 		//OutputYUVChroma.setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.RED));
 		///////
 
+		int newWidth = ((int) Math.floor(width/4)) * 4;
+		int newHeight = ((int) Math.floor(height/4)) * 4;
 		
 		//Column 1
 		m_imgOutputY = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
@@ -1058,9 +1070,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		//Column 3
 		ArrayList<int[]> YUVPredictionImage = unblocker(PredictedIFrames.get(FRAME_NUM));
 		
-		m_imgOutputYPrediction = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		m_imgOutputYPrediction = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
 		WritableRaster rasterYPrediction = (WritableRaster) m_imgOutputYPrediction.getData();
-		rasterYPrediction.setPixels(0, 0, width, height, YUVPredictionImage.get(0));
+		rasterYPrediction.setPixels(0, 0, newWidth, newHeight, YUVPredictionImage.get(0));
 		m_imgOutputYPrediction.setData(rasterYPrediction);
 		m_panelImgOutputYPrediction.setBufferedImage(m_imgOutputYPrediction);	
 		
