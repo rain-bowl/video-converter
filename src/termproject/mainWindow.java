@@ -20,7 +20,7 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	//Variable declaration for panels/buttons
 	JPanel totalGUI, buttonGUI;
-	JButton buttonOpen, buttonQP, buttonRefresh, buttonIFrame, buttonCurrentIFrame;  
+	JButton buttonOpen, buttonQP, buttonRefresh, buttonIFrame, buttonPFrame, buttonCurrentIFrame;  
 
 	//Creates new file chooser object
 	JFileChooser m_fc = new JFileChooser();
@@ -48,6 +48,7 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	//Arraylist of all I frames containing the blocks of Y,U,V frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
 	//Arraylist of all I frames containing the intra-predicted frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> PredictedIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
@@ -109,6 +110,13 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonCurrentIFrame.setSize(180, 40);
 		buttonCurrentIFrame.addActionListener(this);
 		buttonGUI.add(buttonCurrentIFrame);
+		
+		buttonPFrame = new JButton("ANALYZE PFRAME");
+		buttonPFrame.setLocation(670, 0);
+		buttonPFrame.setSize(150, 40);
+		buttonPFrame.addActionListener(this);
+		buttonGUI.add(buttonPFrame);
+		
 		
 		buttonRefresh = new JButton("REFRESH SCREEN");
 		buttonRefresh.setLocation(1720, 0);
@@ -317,6 +325,33 @@ public class mainWindow extends JFrame implements ActionListener{
 			
 			test();
 			totalGUI.revalidate();
+		}
+		else if(evnt.getSource() == buttonPFrame) {
+			
+			convertYUV(1);
+			subSampling(YUVPFrames, 0);
+			
+			//Every even Pframe corresponds to an I frame. Every odd P frame corresponds to the previous P frame
+			int PFrameSize = YUVPFrames.size();
+			
+			for(int i=0; i<PFrameSize; i++) {
+				//Even Pframes
+				if(i % 2 == 0) {
+					ArrayList<ArrayList<int[][]>> CurrentIFrame = IntegerInverseTransformIFrames.get(i/2);
+					ArrayList<int[]> CurrentPFrame = ChromaPFrames.get(i/2);
+					
+					// Creates 4x4 MB for all frames
+					for(int j=0; j < ChromaPFrames.size(); i++) {
+						BlockerPFrames.add(blocker(ChromaPFrames.get(i), 8));
+					}
+					
+					//Do motion estimation here
+
+				}	
+				else{
+					
+				}
+			}
 		}
     	else if (evnt.getSource() == buttonRefresh) {
     	    totalGUI.revalidate();
