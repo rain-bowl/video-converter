@@ -704,6 +704,85 @@ public class mainWindow extends JFrame implements ActionListener{
 		return residuals.get(ideal);
 	}
 
+	// logarithmic search for motion vector, returns arraylist with integer of best block
+	// not sure what i'm supposed to return :thonking:
+	public static ArrayList<Integer> motionLogSearch(ArrayList<ArrayList<int[][]>> currentFrame, ArrayList<ArrayList<int[][]>> referenceFrame){
+		ArrayList<int[][]> Yblocks = currentFrame.get(0);
+		int numBlocks = Yblocks.size(); // get number of Y blocks
+		int p = (int) Math.sqrt(numBlocks);		
+		int offset = (int) Math.ceil(p/2);
+		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
+		ArrayList<int[][]> refBlocks = new ArrayList<int[][]>();
+		ArrayList<int[][]> refY = referenceFrame.get(0);
+		ArrayList<Integer> result = new ArrayList<Integer>(); 
+		boolean last = false;
+		
+		int centerCoord = (int) numBlocks/2; //find middle point
+		int[][] center = Yblocks.get(centerCoord);
+		double minMAD = 666;
+		int minIndex = 0;
+
+		while (last != true) {
+			nineBlocks.add(0, Yblocks.get((int)centerCoord/2 - offset));
+			nineBlocks.add(1, Yblocks.get((int)centerCoord/2));							// 1/4 spot
+			nineBlocks.add(2, Yblocks.get((int)centerCoord/2 + offset));
+			nineBlocks.add(3, Yblocks.get(centerCoord - offset));
+			nineBlocks.add(4, center);													// 1/2 spot
+			nineBlocks.add(5, Yblocks.get(centerCoord + offset));
+			nineBlocks.add(6, Yblocks.get((int)centerCoord/2 + centerCoord - offset));
+			nineBlocks.add(7, Yblocks.get((int)centerCoord/2 + centerCoord));			// 3/4 spot
+			nineBlocks.add(8, Yblocks.get((int)centerCoord/2 + centerCoord + offset));	
+			
+			refBlocks.add(0, refY.get((int)centerCoord/2 - offset));
+			refBlocks.add(1, refY.get((int)centerCoord/2));								// 1/4 spot
+			refBlocks.add(2, refY.get((int)centerCoord/2 + offset));
+			refBlocks.add(3, refY.get(centerCoord - offset));
+			refBlocks.add(4, refY.get(centerCoord));									// 1/2 spot
+			refBlocks.add(5, refY.get(centerCoord + offset));
+			refBlocks.add(6, refY.get((int)centerCoord/2 + centerCoord - offset));
+			refBlocks.add(7, refY.get((int)centerCoord/2 + centerCoord));				// 3/4 spot
+			refBlocks.add(8, refY.get((int)centerCoord/2 + centerCoord + offset));	
+			
+			for (int x = 0; x < 9; x++) {
+				double temp = meanAD(nineBlocks.get(x), refBlocks.get(x));
+				if (temp < minMAD) {
+					minMAD = temp;
+					minIndex = x;
+				}
+			}
+			
+			result.add(minIndex);
+			
+			if (offset == 1) {
+				last = true;
+			}
+			
+			centerCoord = minIndex;
+			offset = (int) Math.ceil(offset/2);
+			
+		}
+		
+		return result;
+	}
+	
+	public static double meanAD(int[][] currentFrame, int[][] referenceFrame) {
+		double MAD = 0;
+		int difference = 0;
+		int blockSize = currentFrame.length;
+		int blockDimension = (int) Math.sqrt(blockSize);
+		
+		for (int y = 0; y < blockDimension; y++) {
+			for (int x = 0; x < blockDimension; x++) {
+				difference += currentFrame[x][y] - referenceFrame[x][y];
+			}
+		}
+		
+		MAD = difference / blockSize;
+		
+		return MAD;
+	}
+	
+	
 	public static int[][] integerTransform(int [][] f, int QP) {
 		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
 		int [][] Ht = {{1,2,1,1},{1,1,-1,-2},{1,-1,-1,2},{1,-2,1,-1}};
