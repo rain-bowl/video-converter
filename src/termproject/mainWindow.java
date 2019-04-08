@@ -54,6 +54,9 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	//Arraylist of all I frames containing the integer transformed frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	
+	//Arraylist of all I frames containing the integer transformed frames
+	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerInverseTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
 	//Video Properties
 	int width, height;
@@ -288,6 +291,50 @@ public class mainWindow extends JFrame implements ActionListener{
 				IntegerTransformIFrames.add(currentFrame);
 			}
 
+			
+			for(int i=0; i < IntegerTransformIFrames.size(); i++) {
+
+				ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+
+				// Performs 4x4 integer transform on all blocks
+				//Gets the predicted Y,U,V arrays in a frame
+				for(int j=0; j < IntegerTransformIFrames.get(i).size(); j++) {
+
+					ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+					ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+					ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+
+					//Gets the 4x4 blocks in each Y,U,V frame
+					for(int k=0; k < IntegerTransformIFrames.get(i).get(j).size(); k++) {
+
+						//For each block, do intra-prediction
+						int[][] blockTransformed = inverseIntegerTransform(IntegerTransformIFrames.get(i).get(j).get(k), QP);
+
+						if(j == 0) {
+							Yres.add(blockTransformed);
+						}
+						else if(j == 1) {
+							Ures.add(blockTransformed);
+						}
+						else {
+							Vres.add(blockTransformed);
+						}
+					}
+
+					if(j == 0) {
+						currentFrame.add(Yres);
+					}
+					else if(j == 1) {
+						currentFrame.add(Ures);
+					}
+					else {
+						currentFrame.add(Vres);
+					}
+				}
+
+				IntegerInverseTransformIFrames.add(currentFrame);
+			}
+			
 			test();
 			totalGUI.revalidate();
 		}
@@ -724,7 +771,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		return res;
 	}
 
-	public static int[][] inverseIntegerTransform(/*int [][] F*/) {
+	public static int[][] inverseIntegerTransform(int [][] F, int QP) {
 		double [][] HInv = {{1,1,1,1/2},{1,1/2,-1,-1},{1,-1/2,-1,1},{1,-1,1,-1/2}};
 		double [][] HtInv = {{1,1,1,1},{1,1/2,-1/2,-1},{1,-1,-1,1},{1/2,-1,1,-1/2}};
 		double [][] V = {{10,16,13},{11,18,14},{13,20,16},{14,23,18},{16,25,20},{18,29,23}};
@@ -732,9 +779,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		double [][] intRes2 = new double[4][4];
 		double [][] intRes3 = new double[4][4];
 		int [][] res = new int[4][4];
-		int QP = 0;
+		//int QP = 0;
 
-		int [][] F = {{507,-12,-2,2},{0,-7,-14,5},{2,0,-8,-11},{-1,8,4,3}};
+		//int [][] F = {{507,-12,-2,2},{0,-7,-14,5},{2,0,-8,-11},{-1,8,4,3}};
 
 		if (QP >= 0 && QP < 6) {
 			intRes[0][0] = F[0][0]*V[QP][0];
@@ -861,14 +908,16 @@ public class mainWindow extends JFrame implements ActionListener{
 		IMGPanel 	m_panelImgOutputY, m_panelImgOutputU, m_panelImgOutputV, m_panelImgOutputYUV,
 					m_panelImgOutputYChroma, m_panelImgOutputUChroma, m_panelImgOutputVChroma, m_panelImgOutputYUVChroma,
 					m_panelImgOutputYPrediction, m_panelImgOutputUPrediction, m_panelImgOutputVPrediction, m_panelImgOutputYUVPrediction,
-					m_panelImgOutputYTransform, m_panelImgOutputUTransform, m_panelImgOutputVTransform, m_panelImgOutputYUVTransform
+					m_panelImgOutputYTransform, m_panelImgOutputUTransform, m_panelImgOutputVTransform, m_panelImgOutputYUVTransform,
+					m_panelImgOutputYInverse, m_panelImgOutputUInverse, m_panelImgOutputVInverse, m_panelImgOutputYUVInverse
 					;
 					//m_panelImgOutputPredictedIFrame, m_panelImgOutputIntegerTransformIFrame;
 		
 		BufferedImage 	m_imgOutputY, m_imgOutputU, m_imgOutputV, m_imgOutputYUV, 
 						m_imgOutputYChroma, m_imgOutputUChroma, m_imgOutputVChroma, m_imgOutputYUVChroma,
 						m_imgOutputYPrediction, m_imgOutputUPrediction, m_imgOutputVPrediction, m_imgOutputYUVPrediction,
-						m_imgOutputYTransform, m_imgOutputUTransform, m_imgOutputVTransform
+						m_imgOutputYTransform, m_imgOutputUTransform, m_imgOutputVTransform,
+						m_imgOutputYInverse, m_imgOutputUInverse, m_imgOutputVInverse, m_imgOutputYUVInverse
 						; 
 						//m_imgOutputPredictedIFrame, m_imgOutputIntegerTransformIFrame;
 
@@ -1002,6 +1051,26 @@ public class mainWindow extends JFrame implements ActionListener{
 		OutputTransform.add(IntegerTransform);
 		
 		//Column 5
+		m_panelImgOutputYInverse = new IMGPanel();
+		m_panelImgOutputYInverse.setLocation(1250, 10);
+		m_panelImgOutputYInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYInverse);
+		
+		m_panelImgOutputUInverse = new IMGPanel();
+		m_panelImgOutputUInverse.setLocation(1250, 220);
+		m_panelImgOutputUInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUInverse);
+		
+		m_panelImgOutputVInverse = new IMGPanel();
+		m_panelImgOutputVInverse.setLocation(1250, 430);
+		m_panelImgOutputVInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVInverse);
+		
+		m_panelImgOutputYUVInverse = new IMGPanel();
+		m_panelImgOutputYUVInverse.setLocation(1250, 640);
+		m_panelImgOutputYUVInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVInverse);
+		
 		JLabel InverseTransform = new JLabel("Inverse Integer Transform Image");
 		OutputInverseTransform.add(InverseTransform);
 		
@@ -1124,6 +1193,35 @@ public class mainWindow extends JFrame implements ActionListener{
 //		rasterYUVTransform.setPixels(0, 0, width, height, YUVTransformImageRGB);
 //		m_imgOutputYUVTransform.setData(rasterYUVTransform);
 //		m_panelImgOutputYUVTransform.setBufferedImage(m_imgOutputYUVTransform);	
+		
+		//Column 5
+		ArrayList<int[]> YUVInverseImage = unblocker(IntegerInverseTransformIFrames.get(FRAME_NUM));
+
+		m_imgOutputYInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYInverse = (WritableRaster) m_imgOutputYInverse.getData();
+		rasterYInverse.setPixels(0, 0, width, height, YUVInverseImage.get(0));
+		m_imgOutputYInverse.setData(rasterYInverse);
+		m_panelImgOutputYInverse.setBufferedImage(m_imgOutputYInverse);	
+		
+		m_imgOutputUInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUInverse = (WritableRaster) m_imgOutputUInverse.getData();
+		rasterUInverse.setPixels(0, 0, width, height, YUVInverseImage.get(1));
+		m_imgOutputUInverse.setData(rasterUInverse);
+		m_panelImgOutputUInverse.setBufferedImage(m_imgOutputUInverse);	
+		
+		m_imgOutputVInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVInverse = (WritableRaster) m_imgOutputVInverse.getData();
+		rasterVInverse.setPixels(0, 0, width, height, YUVInverseImage.get(2));
+		m_imgOutputVInverse.setData(rasterVInverse);
+		m_panelImgOutputVInverse.setBufferedImage(m_imgOutputVInverse);	
+		
+		int[] YUVInverseImageRGB = addRGBChroma(YUVInverseImage, 0);
+		
+		m_imgOutputYUVInverse = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVInverse = (WritableRaster) m_imgOutputYUVInverse.getData();
+		rasterYUVInverse.setPixels(0, 0, width, height, YUVInverseImageRGB);
+		m_imgOutputYUVInverse.setData(rasterYUVInverse);
+		m_panelImgOutputYUVInverse.setBufferedImage(m_imgOutputYUVInverse);	
 	}
 
 	/*
