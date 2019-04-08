@@ -807,6 +807,113 @@ public class mainWindow extends JFrame implements ActionListener{
 		return residuals.get(ideal);
 	}
 
+
+	// logarithmic search for motion vector, returns arraylist with integer of final motion vector
+	public static ArrayList<Integer> motionLogSearch(ArrayList<ArrayList<int[][]>> currentFrame, ArrayList<ArrayList<int[][]>> referenceFrame){
+		ArrayList<int[][]> Yblocks = currentFrame.get(0);
+		int numBlocks = Yblocks.size(); // get number of Y blocks
+		int rowSize = (int) Math.sqrt(numBlocks);
+		int p = (int) Math.sqrt(numBlocks);		
+		int offset = (int) Math.ceil(p/2);
+		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
+		ArrayList<int[][]> refBlocks = new ArrayList<int[][]>();
+		ArrayList<int[][]> refY = referenceFrame.get(0);
+		ArrayList<Integer> result = new ArrayList<Integer>(); 
+		boolean last = false;
+		
+		int centerCoord = (int) numBlocks/2; //find middle point
+		int[][] center = Yblocks.get(centerCoord);
+		double minMAD = 666;
+		int minIndex = 0;
+		int lastPosition = centerCoord;
+
+		while (last != true) {
+			int tl = (int)centerCoord/2 - offset;
+			int tm = (int)centerCoord/2;
+			int tr = (int)centerCoord/2 + offset;
+			int l = centerCoord - offset;
+			int m = centerCoord;
+			int r = centerCoord + offset;
+			int bl = (int)centerCoord/2 + centerCoord - offset;
+			int bm = (int)centerCoord/2 + centerCoord;
+			int br = (int)centerCoord/2 + centerCoord + offset;
+			
+			int[] positions = new int [] {tl, tm, tr, l, m, r, bl, bm, br};
+			
+			nineBlocks.add(0, Yblocks.get(tl));
+			nineBlocks.add(1, Yblocks.get(tm));							// 1/4 spot
+			nineBlocks.add(2, Yblocks.get(tr));
+			nineBlocks.add(3, Yblocks.get(l));
+			nineBlocks.add(4, Yblocks.get(m));													// 1/2 spot
+			nineBlocks.add(5, Yblocks.get(r));
+			nineBlocks.add(6, Yblocks.get(bl));
+			nineBlocks.add(7, Yblocks.get(bm));			// 3/4 spot
+			nineBlocks.add(8, Yblocks.get(br));	
+			
+			refBlocks.add(0, refY.get(tl));
+			refBlocks.add(1, refY.get(tm));
+			refBlocks.add(2, refY.get(tr));	
+			refBlocks.add(3, refY.get(l));	
+			refBlocks.add(4, refY.get(m));
+			refBlocks.add(5, refY.get(r));	
+			refBlocks.add(6, refY.get(bl));	
+			refBlocks.add(7, refY.get(bm));	
+			refBlocks.add(8, refY.get(br));	
+			
+			for (int x = 0; x < 9; x++) {
+				double temp = meanAD(nineBlocks.get(x), refBlocks.get(x));
+				if (temp < minMAD) {
+					minMAD = temp;
+					minIndex = x;
+				}
+			}
+			
+			if (offset == 1) {
+				last = true;
+				lastPosition = positions[minIndex];
+			}
+			
+			centerCoord = minIndex;
+			offset = (int) Math.ceil(offset/2);
+			
+		}
+		
+		result = motionVector((int) numBlocks/2, lastPosition, rowSize);
+		System.out.println("motionvector result: " + result.get(0) + ", " + result.get(1));
+		
+		return result;
+	}
+	
+	public static double meanAD(int[][] currentFrame, int[][] referenceFrame) {
+		double MAD = 0;
+		int difference = 0;
+		int blockSize = currentFrame.length;
+		int blockDimension = (int) Math.sqrt(blockSize);
+		
+		for (int y = 0; y < blockDimension; y++) {
+			for (int x = 0; x < blockDimension; x++) {
+				difference += currentFrame[x][y] - referenceFrame[x][y];
+			}
+		}
+		
+		MAD = difference / blockSize;
+		
+		return MAD;
+	}
+	
+	public static ArrayList<Integer> motionVector(int center, int last, int rowSize) {
+		int centerX = center % rowSize;
+		int centerY = (int) Math.floor(center / rowSize);
+		int lastX = last % rowSize;
+		int lastY = (int) Math.floor(last / rowSize);
+		
+		ArrayList<Integer> result = new ArrayList<Integer>();
+		result.add(centerX - lastX);
+		result.add(centerY - lastY);
+
+		return result;
+	}
+	
 	public static int[][] integerTransform(int [][] f, int QP) {
 		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
 		int [][] Ht = {{1,2,1,1},{1,1,-1,-2},{1,-1,-1,2},{1,-2,1,-1}};
