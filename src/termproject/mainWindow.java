@@ -264,7 +264,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	}
 
     // split image input into blocks of size x size (ex size = 8, 8 x 8 blocks)
-	public ArrayList<ArrayList<int[][]>> blocker(int size)
+	public ArrayList<ArrayList<int[][]>> blocker(ArrayList<int[]> frame, int size)
     {
 		int newWidth = ((int)width/size)*size;
 		int newHeight = ((int)height/size)*size;
@@ -275,6 +275,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		ArrayList<int[][]> resY = new ArrayList<int[][]>();
 		ArrayList<int[][]> resU = new ArrayList<int[][]>();
 		ArrayList<int[][]> resV = new ArrayList<int[][]>();
+		int[] frameY = frame.get(0); // get all corresponding YUV values of current frame
+		int[] frameU = frame.get(1);
+		int[] frameV = frame.get(2);
 
     	for (int x = 0; x < blockNum; x++)
     	{
@@ -292,9 +295,9 @@ public class mainWindow extends JFrame implements ActionListener{
                         xcount = 0;
                     }
             
-                    blockY[e][f] = YValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
-                    blockU[e][f] = UValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
-                    blockV[e][f] = VValues[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+                    blockY[e][f] = frameY[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+                    blockU[e][f] = frameU[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+                    blockV[e][f] = frameV[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
                 }
                 xcount++;
             }
@@ -317,7 +320,7 @@ public class mainWindow extends JFrame implements ActionListener{
 
 		// vertical mode, set all predicted pixels in column A to be pixel A, B as B, & etc.
 		for (int y = 0; y < 4; y++) {
-			current[0][y] = f[1][0]; // f[1][0] == pixel A 	[M][A][B][C][D]
+			current[0][y] = f[1][0];  // f[1][0] == pixel A 	[M][A][B][C][D]
 			current[1][y] = f[2][0];				 	   	 // [I] |  |  |  | 
 			current[2][y] = f[3][0];		   			  	 // [J] |  |  |  | 
 			current[3][y] = f[4][0];					 	 // [K] |  |  |  | 
@@ -326,7 +329,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		
 		// horizontal mode, set all predicted in row I as pixel I, J as J, etc.
 		for (int x = 0; x < 4; x++) {
-			current[x][0] = f[0][1];// f[0][1] == pixel I 	[M][A][B][C][D]
+			current[x][0] = f[0][1];  // f[0][1] == pixel I 	[M][A][B][C][D]
 			current[x][1] = f[0][2];				 	   	 // [I] --------->
 			current[x][2] = f[0][3];				 	   	 // [J] --------->
 			current[x][3] = f[0][4];				 	   	 // [K] --------->
