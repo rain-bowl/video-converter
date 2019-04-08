@@ -459,16 +459,52 @@ public class mainWindow extends JFrame implements ActionListener{
 //		ArrayList<int[][]> Yblocks = blocks.get(0);
 //		int numBlocks = Yblocks.size(); // get number of Y blocks
 //		int p = (int) Math.sqrt(numBlocks);		
-//		int offset = (int) Math.ceil(p/2); //find middle point
+//		int offset = (int) Math.ceil(p/2);
 //		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
-//		int[][] center = Yblocks.get(numBlocks);
+//		boolean last = false;
 //		
-//		for (int x = 0; x < 9; x++) {
-//			nineBlocks.add(x, element);
+//		int centerCoord = (int) numBlocks/2; //find middle point
+//		int[][] center = Yblocks.get(centerCoord);
+//		double minMAD = 0;
+//		int minIndex = 0;
+//		
+//		while (last != true) {
+//			nineBlocks.add(0, Yblocks.get((int)centerCoord/2 - offset));
+//			nineBlocks.add(1, Yblocks.get((int)centerCoord/2));							// 1/4 spot
+//			nineBlocks.add(2, Yblocks.get((int)centerCoord/2 + offset));
+//			nineBlocks.add(3, Yblocks.get(centerCoord - offset));
+//			nineBlocks.add(4, center);													// 1/2 spot
+//			nineBlocks.add(5, Yblocks.get(centerCoord + offset));
+//			nineBlocks.add(6, Yblocks.get((int)centerCoord/2 + centerCoord - offset));
+//			nineBlocks.add(7, Yblocks.get((int)centerCoord/2 + centerCoord));			// 3/4 spot
+//			nineBlocks.add(8, Yblocks.get((int)centerCoord/2 + centerCoord + offset));	
+//			
+//			for (int x = 0; x < 9; x++) {
+//				double temp = meanAD(nineBlocks.get(x));
+//				if (temp < minMAD) {
+//					minMAD = temp;
+//					minIndex = x;
+//				}
+//			}
+//			
+//			if (offset == 1) {
+//				last = true;
+//			}
+//			
+//			centerCoord = minIndex;
+//			offset = (int) Math.ceil(offset/2);
+//			
 //		}
 //		
-//		
 //		return null;
+//	}
+//	
+//	public static double meanAD(int[][] block, int[][] target) {
+//		double MAD = 0;
+//		
+//		for ()
+//		
+//		return MAD;
 //	}
 	
 	public static int[][] integerTransform(int [][] f) {
