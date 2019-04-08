@@ -313,31 +313,106 @@ public class mainWindow extends JFrame implements ActionListener{
 		return res;
     }
 	
-	// performs intra prediction on 4x4 block (5x5 block used to get neighbouring info
+    public ArrayList<int[]> unblocker(ArrayList<ArrayList<int[][]>> frame) {
+    	ArrayList<int[]> res = new ArrayList<int[]>();    	
+    	ArrayList<int[][]> Yblocks = frame.get(0);
+    	ArrayList<int[][]> Ublocks = frame.get(1);
+    	ArrayList<int[][]> Vblocks = frame.get(2);
+
+    	int blockSize = Yblocks.get(0).length;
+    	int blockDimension = (int) Math.sqrt(blockSize);
+    	int newWidth = ((int) width/blockDimension) * blockDimension;
+    	int newHeight = ((int) height/blockDimension) * blockDimension;
+    	int xcount = 0;
+    	int count = 0;
+    	
+    	int[] unblockedY = new int[blockSize];
+    	int[] unblockedU = new int[blockSize];
+    	int[] unblockedV = new int[blockSize];
+    	
+    	int[] resY = new int[newWidth * newHeight];
+    	int[] resU = new int[newWidth * newHeight];
+    	int[] resV = new int[newWidth * newHeight];
+    	
+    	for (int x = 0; x < Yblocks.size(); x++) { // iterate through each block
+    		
+    		unblockedY = flatten2D(Yblocks.get(x));
+    		unblockedU = flatten2D(Ublocks.get(x));
+    		unblockedV = flatten2D(Vblocks.get(x));
+    		
+			for(int y = 0; y < blockSize; y++)
+			{
+				int remainder = y % blockDimension;
+				
+				if (x < newWidth/blockDimension)
+				{
+					xcount = (x % (newWidth/blockDimension)) * blockDimension;
+				}
+				else if (x == newWidth/blockDimension)
+				{
+					xcount = x * blockSize;
+				}
+				else
+				{
+					int rowCount = x/(newWidth/blockDimension);
+					xcount = rowCount * newWidth * blockDimension + (x % (newWidth/blockDimension)) * blockDimension;
+				}
+				
+				if (remainder == 0 && y != 0)
+				{
+					count += newWidth;
+				}
+				
+				resY[count + remainder + xcount] = unblockedY[y];
+				resU[count + remainder + xcount] = unblockedU[y];
+				resV[count + remainder + xcount] = unblockedV[y];
+			}
+    	}
+    	
+    	res.add(resY);
+    	res.add(resU);
+    	res.add(resV);
+
+    	return res;
+    }
+    
+    // helper for unblocker
+    static public int[] flatten2D(int[][] array) {
+    	int[] res = new int[array.length * array[0].length];
+
+        for (int y = 0; y < array.length; ++y) {
+	        for (int x = 0; x < array[y].length; ++x) {
+	        	res[(y * array[0].length + x)] = array[y][x];
+	        }
+        }
+        return res;
+    }
+	
+	// performs intra prediction on 4x4 block
 	public static ArrayList<int[][]> intra(int f[][]) {
 		ArrayList<int[][]> result = new ArrayList<int[][]>();
 		int[][] current = new int[4][4];
 
 		// vertical mode, set all predicted pixels in column A to be pixel A, B as B, & etc.
 		for (int y = 0; y < 4; y++) {
-			current[0][y] = f[1][0];  // f[1][0] == pixel A 	[M][A][B][C][D]
-			current[1][y] = f[2][0];				 	   	 // [I] |  |  |  | 
-			current[2][y] = f[3][0];		   			  	 // [J] |  |  |  | 
-			current[3][y] = f[4][0];					 	 // [K] |  |  |  | 
+			current[0][y] = f[0][0];  // f[1][0] == pixel A 	[M][A][B][C][D]
+			current[1][y] = f[1][0];				 	   	 // [I] |  |  |  | 
+			current[2][y] = f[2][0];		   			  	 // [J] |  |  |  | 
+			current[3][y] = f[3][0];					 	 // [K] |  |  |  | 
 		}												  	 // [L] V  V  V  V 
 		result.add(current);
 		
 		// horizontal mode, set all predicted in row I as pixel I, J as J, etc.
 		for (int x = 0; x < 4; x++) {
-			current[x][0] = f[0][1];  // f[0][1] == pixel I 	[M][A][B][C][D]
-			current[x][1] = f[0][2];				 	   	 // [I] --------->
-			current[x][2] = f[0][3];				 	   	 // [J] --------->
-			current[x][3] = f[0][4];				 	   	 // [K] --------->
+			current[x][0] = f[0][0];  // f[0][1] == pixel I 	[M][A][B][C][D]
+			current[x][1] = f[0][1];				 	   	 // [I] --------->
+			current[x][2] = f[0][2];				 	   	 // [J] --------->
+			current[x][3] = f[0][3];				 	   	 // [K] --------->
 		}											 	 	 // [L] --------->
 		result.add(current);
 		
 		// average mode, set all predicted in 4x4 block as average of 8 neighbours (A-D, I-L)
-		int average = (f[1][0] + f[2][0] + f[3][0] + f[4][0] + f[0][1] + f[0][2] + f[0][3] + f[0][4]) / 8;
+		int average = (f[0][0] + f[1][0] + f[2][0] + f[3][0] + f[0][0] + f[0][1] + f[0][2] + f[0][3]) / 8;
 		
 		for (int x = 0; x < 4; x++) {
 			current[x][0] = average;
@@ -379,6 +454,22 @@ public class mainWindow extends JFrame implements ActionListener{
 		
 		return residuals.get(ideal);
 	}
+	
+//	public static int[][] motionLogSearch(ArrayList<ArrayList<int[][]>> blocks){
+//		ArrayList<int[][]> Yblocks = blocks.get(0);
+//		int numBlocks = Yblocks.size(); // get number of Y blocks
+//		int p = (int) Math.sqrt(numBlocks);		
+//		int offset = (int) Math.ceil(p/2); //find middle point
+//		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
+//		int[][] center = Yblocks.get(numBlocks);
+//		
+//		for (int x = 0; x < 9; x++) {
+//			nineBlocks.add(x, element);
+//		}
+//		
+//		
+//		return null;
+//	}
 	
 	public static int[][] integerTransform(int [][] f) {
 		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
