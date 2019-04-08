@@ -221,6 +221,12 @@ public class mainWindow extends JFrame implements ActionListener{
 
 						//Choose the best predictor
 						int[][] chosenPrediction = residuals(blockRes, BlockerIFrames.get(i).get(j).get(k));
+						
+						for(int l=0; l < 4; l++) {
+							for(int m=0; m < 4; m++) {
+								chosenPrediction[l][m] = chosenPrediction[l][m]-BlockerIFrames.get(i).get(j).get(k)[l][m];
+							}
+						}
 
 						if(j == 0) {
 							Yres.add(chosenPrediction);
@@ -1217,9 +1223,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		
 		int[] YUVInverseImageRGB = addRGBChroma(YUVInverseImage, 0);
 		
-		m_imgOutputYUVInverse = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		m_imgOutputYUVInverse = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
 		WritableRaster rasterYUVInverse = (WritableRaster) m_imgOutputYUVInverse.getData();
-		rasterYUVInverse.setPixels(0, 0, width, height, YUVInverseImageRGB);
+		rasterYUVInverse.setPixels(0, 0, newWidth, newHeight, YUVInverseImageRGB);
 		m_imgOutputYUVInverse.setData(rasterYUVInverse);
 		m_panelImgOutputYUVInverse.setBufferedImage(m_imgOutputYUVInverse);	
 	}
