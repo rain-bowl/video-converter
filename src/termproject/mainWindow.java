@@ -6,16 +6,12 @@ import java.awt.image.BufferedImage;
 import java.awt.image.PixelGrabber;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.JFileChooser;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.FrameGrabber.Exception;
 import org.bytedeco.javacv.Java2DFrameConverter;
 
@@ -35,29 +31,48 @@ public class mainWindow extends JFrame implements ActionListener{
 	//Array list containing buffered images of the video frames
 	ArrayList<BufferedImage> videoFrames = new ArrayList<BufferedImage>();
 
+	//Array list containing the images separated into I, P, and B frames
 	ArrayList<BufferedImage> videoIFrames = new ArrayList<BufferedImage>();
 	ArrayList<BufferedImage> videoPFrames = new ArrayList<BufferedImage>();
 	ArrayList<BufferedImage> videoBFrames = new ArrayList<BufferedImage>();
 
+	//Arraylist of all the I, P, B frames containing an Arraylist of (Y,U,V) for each frame
 	ArrayList<ArrayList<int[]>> YUVIFrames = new ArrayList<ArrayList<int[]>>();
 	ArrayList<ArrayList<int[]>> YUVPFrames = new ArrayList<ArrayList<int[]>>();
 	ArrayList<ArrayList<int[]>> YUVBFrames = new ArrayList<ArrayList<int[]>>();
 
+	//Arraylist of all the I, P, B frames containing an Arraylist of (Y, 4:2:0 U, 4:2:0 V) for each frame
 	ArrayList<ArrayList<int[]>> ChromaIFrames = new ArrayList<ArrayList<int[]>>();
 	ArrayList<ArrayList<int[]>> ChromaPFrames = new ArrayList<ArrayList<int[]>>();
 	ArrayList<ArrayList<int[]>> ChromaBFrames = new ArrayList<ArrayList<int[]>>();
 
+	//Arraylist of all I frames containing the blocks of Y,U,V frames
+	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+
+	//Arraylist of all I frames containing the intra-predicted frames
+	ArrayList<ArrayList<ArrayList<int[][]>>> PredictedIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+
+	//Arraylist of all I frames containing the integer transformed frames
+	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+
 	//Video Properties
 	int width, height;
+	int YValues[], UValues[], VValues[], inputValues[];
 
-	//Set IframeDistance
-	int IframeDistance = 10;
+	// Set IframeDistance
+	int IframeDistance = 9;
+
+	// MAX_FRAMES must be a number of (9*n)+1 frames
+	int MAX_FRAMES = 1;
+
+	//Set the Quality Factor
+	int QP = 6;
 
 	public JPanel createContentPane(){	   
 
 		totalGUI = new JPanel();
 		totalGUI.setLayout(null);
-		
+
 		buttonGUI = new JPanel();
 		buttonGUI.setLayout(null);
 		buttonGUI.setLocation(10, 10);
@@ -69,8 +84,8 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonOpen.setSize(150, 40);
 		buttonOpen.addActionListener(this);
 		buttonGUI.add(buttonOpen);
-		
-	    totalGUI.setOpaque(true);
+
+		totalGUI.setOpaque(true);
 
 		return totalGUI;
 	}
@@ -84,45 +99,131 @@ public class mainWindow extends JFrame implements ActionListener{
 				File file = m_fc.getSelectedFile();
 				String filename = file.toString();
 
-			    String ext = null;
-			    String s = file.getName();
-			    int i = s.lastIndexOf('.');
+				// Grabs the filename for video frame extraction
+				rawVideo = new FFmpegFrameGrabber(filename);
 
-		        if (i > 0 &&  i < s.length() - 1) {
-		            ext = s.substring(i+1).toLowerCase();
-		        }
-			        
-		        if(ext.equals("yuv")) {
-		        	System.out.println("YUV file");
-		        	//rawVideo = new FrameGrabber(filename);
-		        }
-		        else {
-			    
-		        	// Grabs the filename for video frame extraction
-		        	rawVideo = new FFmpegFrameGrabber(filename);
-				
-		        }
-
-		        inverseIntegerTransform();
+				// Extract video frames and places the frames into the correct section
 				extractFrames();
 				separateFrames();
 
 				// I-Frames Encoding
 				convertYUV(0);
 				subSampling(YUVIFrames, 0);
-		        //TESTING: integerTransform();
+
+				// Creates 4x4 MB for all frames
+				for(int i=0; i < ChromaIFrames.size(); i++) {
+					BlockerIFrames.add(blocker(ChromaIFrames.get(i), 4));
+				}
+
+				// Gets a frame
+				for(int i=0; i < BlockerIFrames.size(); i++) {
+
+					ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+
+					// Performs 4x4 Intra-prediction for all Y,U,V 4x4 blocks
+					//Gets the YUV arrays in a frame
+					System.out.println(BlockerIFrames.get(i).size());
+					for(int j=0; j < BlockerIFrames.get(i).size(); j++) {
+
+						ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+						ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+						ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+
+						//Gets the 4x4 blocks in each Y,U,V frame
+						System.out.println(BlockerIFrames.get(i).get(j).size());
+						for(int k=0; k < BlockerIFrames.get(i).get(j).size(); k++) {
+
+							//For each block, do intra-prediction
+							System.out.println(BlockerIFrames.get(i).get(j).get(k));
+							ArrayList<int[][]> blockRes = intra(BlockerIFrames.get(i).get(j).get(k));
+
+							//Choose the best predictor
+							int[][] chosenPrediction = residuals(blockRes, BlockerIFrames.get(i).get(j).get(k));
+
+							if(j == 0) {
+								Yres.add(chosenPrediction);
+							}
+							else if(j == 1) {
+								Ures.add(chosenPrediction);
+							}
+							else {
+								Vres.add(chosenPrediction);
+							}
+						}
+
+						if(j == 0) {
+							currentFrame.add(Yres);
+						}
+						else if(j == 1) {
+							currentFrame.add(Ures);
+						}
+						else {
+							currentFrame.add(Vres);
+						}
+					}
+
+					PredictedIFrames.add(currentFrame);
+				}
+
+
+				for(int i=0; i < PredictedIFrames.size(); i++) {
+
+					ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+
+					// Performs 4x4 integer transform on all blocks
+					//Gets the predicted Y,U,V arrays in a frame
+					for(int j=0; j < PredictedIFrames.get(i).size(); j++) {
+
+						ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+						ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+						ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+
+						//Gets the 4x4 blocks in each Y,U,V frame
+						for(int k=0; k < PredictedIFrames.get(i).get(j).size(); k++) {
+
+							//For each block, do intra-prediction
+							int[][] blockTransformed = integerTransform(PredictedIFrames.get(i).get(j).get(k), QP);
+
+							if(j == 0) {
+								Yres.add(blockTransformed);
+							}
+							else if(j == 1) {
+								Ures.add(blockTransformed);
+							}
+							else {
+								Vres.add(blockTransformed);
+							}
+						}
+
+						if(j == 0) {
+							currentFrame.add(Yres);
+						}
+						else if(j == 1) {
+							currentFrame.add(Ures);
+						}
+						else {
+							currentFrame.add(Vres);
+						}
+					}
+
+					IntegerTransformIFrames.add(currentFrame);
+				}
+
+				test();
 				
-				//test();
 			}
 		}
 	}
 
+	/*
+	 * Extracts Frames from video and places output in Arraylist of bufferedImages
+	 */
 	public void extractFrames() {
 		try {
 			rawVideo.start();
 
 			//Grabs the first 50 frames of the video
-			for (int i = 0 ; i < 2 ; i++) {
+			for (int i = 0 ; i < MAX_FRAMES ; i++) {
 
 				//Creates a buffered image from the video frame
 				BufferedImage currentFrame = new Java2DFrameConverter().convert(rawVideo.grabImage());
@@ -138,45 +239,59 @@ public class mainWindow extends JFrame implements ActionListener{
 		}
 	}
 
+	/*
+	 * Separates the extracted frames and sorts them into I, P, B frames for further processing
+	 * Output: Places each corresponding I, P, B frame into its own Arraylist of bufferedImages
+	 */
 	public void separateFrames() {
-		int PframeDistance = IframeDistance/2;
+
+		//IBBPBBPBBI
+		int Bframe = 0;
 
 		for(int i=0; i < videoFrames.size(); i++) {
-			if(i % IframeDistance == 0) {
+			if(i % IframeDistance == 0 || i == 0) {
 				videoIFrames.add(videoFrames.get(i));
+				Bframe = 1;
 			}
-			else if(i % PframeDistance == 0) {
-				videoPFrames.add(videoFrames.get(i));
+			else if(Bframe == 1 || Bframe == 2) {
+				videoBFrames.add(videoFrames.get(i));
+				Bframe++;
 			}
 			else {
-				videoBFrames.add(videoFrames.get(i));
+				videoPFrames.add(videoFrames.get(i));
+				Bframe = 1;
 			}
 
 		}
 	}
 
+	/*
+	 * Converts all the frames in an Arraylist of bufferedImages to YUV
+	 * Input: integer currentMoethod which tells the function where to output the YUV frames: 0 = I frames, 1 = P frames, 2 = B frames
+	 * Output: creates an Arraylist containing the separate Y, U ,V data -> places this Arraylist into an Arraylist containing all the (I/P/B) frames
+	 */
 	public void convertYUV(int currentMethod) {
 		for(int i = 0; i < videoFrames.size(); i++) {
 			width = videoFrames.get(i).getWidth(null);
 			height = videoFrames.get(i).getHeight(null);
 
 			ArrayList<int[]> currentYUVFrame = new ArrayList<int[]>();
-			int[] inputValues = new int[width*height];
-			int[] YValues = new int[width*height];
-			int[] UValues = new int[width*height];
-			int[] VValues = new int[width*height];
+			inputValues = new int[width*height];
+			YValues = new int[width*height];
+			UValues = new int[width*height];
+			VValues = new int[width*height];
 
 			// Grab Original Image Pixel Values
 			PixelGrabber grabber = new PixelGrabber(videoFrames.get(i).getSource(), 0, 0, width, height, inputValues, 0, width);
-			 try{
-	              if(grabber.grabPixels() != true){
-	                try {
+			try{
+				if(grabber.grabPixels() != true){
+					try {
 						throw new AWTException("Grabber returned false: " + grabber.status());
 					} catch (AWTException e) {
 						e.printStackTrace();
 					};
-	              }
-	            } catch (InterruptedException e) {};
+				}
+			} catch (InterruptedException e) {};
 
 
 			// set YUV values 
@@ -211,18 +326,14 @@ public class mainWindow extends JFrame implements ActionListener{
 	}
 
 	public void subSampling(ArrayList<ArrayList<int[]>> inputYUVFrames, int currentMethod) {
-		
-		// set result data size
-		int[] res = new int[width*height*3];
-		int[] noLumaRes = new int[width*height*3];
-		
+
 		for(int i=0; i<inputYUVFrames.size(); i++) {
 			ArrayList<int[]> outputRes = new ArrayList<int[]>();
-			
+
 			// set UV values for chroma use
 			int[] UChroma = new int[width*height];
 			int[] VChroma = new int[width*height];
-	
+
 			// adding every other U and V value to a block of 4
 			for (int y = 1; y < height; y+=2)
 			{
@@ -232,18 +343,18 @@ public class mainWindow extends JFrame implements ActionListener{
 					UChroma[((y - 1)*width + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
 					UChroma[(y*width + (x - 1))] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
 					UChroma[(y*width + x)] = (inputYUVFrames.get(i).get(1)[(y - 1)*width + (x - 1)]);
-	
+
 					VChroma[((y - 1)*width + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
 					VChroma[((y - 1)*width + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
 					VChroma[(y*width + (x - 1))] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);
 					VChroma[(y*width + x)] = (inputYUVFrames.get(i).get(2)[(y - 1)*width + (x - 1)]);    	
 				}
 			}
-			
+
 			outputRes.add(inputYUVFrames.get(i).get(0));
 			outputRes.add(UChroma);
 			outputRes.add(VChroma);
-			
+
 			if(currentMethod == 0) {
 				// Add the ChromaSubsampled array list to a global array list containing all frames
 				ChromaIFrames.add(outputRes);
@@ -256,85 +367,231 @@ public class mainWindow extends JFrame implements ActionListener{
 				// Add the ChromaSubsampled array list to a global array list containing all frames
 				ChromaBFrames.add(outputRes);
 			}
-			
+
 		}
 
 	}
 
-    // split image input into blocks of 8x8
-	public ArrayList<ArrayList<int[][]>> eightBlocks()
-    {
-		int newWidth = ((int)width/8)*8;
-		int newHeight = ((int)height/8)*8;
+	// split image input into blocks of size x size (ex size = 8, 8 x 8 blocks)
+	public ArrayList<ArrayList<int[][]>> blocker(ArrayList<int[]> frame, int size)
+	{
+		int newWidth = ((int)width/size)*size;
+		int newHeight = ((int)height/size)*size;
 		int xcount = 0;
 		int ycount = 0;
-		int blockNum = newWidth/8 * newHeight/8;
+		int blockNum = newWidth/size * newHeight/size;
 		ArrayList<ArrayList<int[][]>> res = new ArrayList<ArrayList<int[][]>>();
 		ArrayList<int[][]> resY = new ArrayList<int[][]>();
 		ArrayList<int[][]> resU = new ArrayList<int[][]>();
 		ArrayList<int[][]> resV = new ArrayList<int[][]>();
+		int[] frameY = frame.get(0); // get all corresponding YUV values of current frame
+		int[] frameU = frame.get(1);
+		int[] frameV = frame.get(2);
 
-    	for (int x = 0; x < blockNum; x++)
-    	{
-            int[][] blockY = new int[8][8];
-            int[][] blockU = new int[8][8];
-            int[][] blockV = new int[8][8];
+		for (int x = 0; x < blockNum; x++)
+		{
+			int[][] blockY = new int[size][size];
+			int[][] blockU = new int[size][size];
+			int[][] blockV = new int[size][size];
 
-            for (int e = 0; e < 8; e++)
-            {
-                for (int f = 0; f < 8; f++)
-                {
-                    if (xcount % newWidth == 0 && x != 0 && xcount != 0)
-                    {
-                        ycount += 8;
-                        xcount = 0;
-                    }
-            
-//                    blockY[e][f] = YValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
-//                    blockU[e][f] = UValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
-//                    blockV[e][f] = VValues[(ycount + e) * w + ((x % (newWidth/8)) * 8) + f];
-                }
-                xcount++;
-            }
-            resY.add(blockY);
-            resU.add(blockU);
-            resV.add(blockV);
+			for (int e = 0; e < size; e++)
+			{
+				for (int f = 0; f < size; f++)
+				{
+					if (xcount % newWidth == 0 && x != 0 && xcount != 0)
+					{
+						ycount += size;
+						xcount = 0;
+					}
+
+					blockY[e][f] = frameY[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+					blockU[e][f] = frameU[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+					blockV[e][f] = frameV[(ycount + e) * width + ((x % (newWidth/size)) * size) + f];
+				}
+				xcount++;
+			}
+			resY.add(blockY);
+			resU.add(blockU);
+			resV.add(blockV);
+		}
+
+		res.add(resY);
+		res.add(resU);
+		res.add(resV);
+
+		return res;
+	}
+
+
+	public ArrayList<int[]> unblocker(ArrayList<ArrayList<int[][]>> frame) {
+    	ArrayList<int[]> res = new ArrayList<int[]>();    	
+    	ArrayList<int[][]> Yblocks = frame.get(0);
+    	ArrayList<int[][]> Ublocks = frame.get(1);
+    	ArrayList<int[][]> Vblocks = frame.get(2);
+
+    	int blockSize = Yblocks.get(0).length;
+    	int blockDimension = (int) Math.sqrt(blockSize);
+    	int newWidth = ((int) width/blockDimension) * blockDimension;
+    	int newHeight = ((int) height/blockDimension) * blockDimension;
+    	int xcount = 0;
+    	int count = 0;
+
+    	int[] unblockedY = new int[blockSize];
+    	int[] unblockedU = new int[blockSize];
+    	int[] unblockedV = new int[blockSize];
+
+    	int[] resY = new int[newWidth * newHeight];
+    	int[] resU = new int[newWidth * newHeight];
+    	int[] resV = new int[newWidth * newHeight];
+
+    	for (int x = 0; x < Yblocks.size(); x++) { // iterate through each block
+
+    		unblockedY = flatten2D(Yblocks.get(x));
+    		unblockedU = flatten2D(Ublocks.get(x));
+    		unblockedV = flatten2D(Vblocks.get(x));
+
+			for(int y = 0; y < blockSize; y++)
+			{
+				int remainder = y % blockDimension;
+
+				if (x < newWidth/blockDimension)
+				{
+					xcount = (x % (newWidth/blockDimension)) * blockDimension;
+				}
+				else if (x == newWidth/blockDimension)
+				{
+					xcount = x * blockSize;
+				}
+				else
+				{
+					int rowCount = x/(newWidth/blockDimension);
+					xcount = rowCount * newWidth * blockDimension + (x % (newWidth/blockDimension)) * blockDimension;
+				}
+
+				if (remainder == 0 && y != 0)
+				{
+					count += newWidth;
+				}
+
+				resY[count + remainder + xcount] = unblockedY[y];
+				resU[count + remainder + xcount] = unblockedU[y];
+				resV[count + remainder + xcount] = unblockedV[y];
+			}
     	}
 
-    		res.add(resY);
-    		res.add(resU);
-    		res.add(resV);
-    		
-		return res;
+    	res.add(resY);
+    	res.add(resU);
+    	res.add(resV);
+
+    	return res;
     }
-	
-	public static int[][] integerTransform(int [][] f) {
+
+    // helper for unblocker
+    static public int[] flatten2D(int[][] array) {
+    	int[] res = new int[array.length * array[0].length];
+
+        for (int y = 0; y < array.length; ++y) {
+	        for (int x = 0; x < array[y].length; ++x) {
+	        	res[(y * array[0].length + x)] = array[y][x];
+	        }
+        }
+        return res;
+    }
+
+	// performs intra prediction on 4x4 block (5x5 block used to get neighbouring info
+	public static ArrayList<int[][]> intra(int f[][]) {
+		ArrayList<int[][]> result = new ArrayList<int[][]>();
+		int[][] current = new int[4][4];
+
+		// vertical mode, set all predicted pixels in column A to be pixel A, B as B, & etc.
+		for (int y = 0; y < 4; y++) {
+			current[0][y] = f[0][0];  // f[1][0] == pixel A 	[M][A][B][C][D]
+			current[1][y] = f[1][0];				 	   	 // [I] |  |  |  | 
+			current[2][y] = f[2][0];		   			  	 // [J] |  |  |  | 
+			current[3][y] = f[3][0];					 	 // [K] |  |  |  | 
+		}												  	 // [L] V  V  V  V 
+		result.add(current);
+
+		// horizontal mode, set all predicted in row I as pixel I, J as J, etc.
+		for (int x = 0; x < 4; x++) {
+			current[x][0] = f[0][0];  // f[0][1] == pixel I 	[M][A][B][C][D]
+			current[x][1] = f[0][1];				 	   	 // [I] --------->
+			current[x][2] = f[0][2];				 	   	 // [J] --------->
+			current[x][3] = f[0][3];				 	   	 // [K] --------->
+		}											 	 	 // [L] --------->
+		result.add(current);
+
+		// average mode, set all predicted in 4x4 block as average of 8 neighbours (A-D, I-L)
+		int average = (f[0][0] + f[1][0] + f[2][0] + f[3][0] + f[0][0] + f[0][1] + f[0][2] + f[0][3]) / 8;
+
+		for (int x = 0; x < 4; x++) {
+			current[x][0] = average;
+			current[x][1] = average;
+			current[x][2] = average;
+			current[x][3] = average;
+		}
+		result.add(current);
+
+		return result;
+	} 
+
+	public static int[][] residuals(ArrayList<int[][]> predicted, int[][] actual) {
+		ArrayList<int[][]> residuals = new ArrayList<int[][]>();
+		int[] errorSum = new int[predicted.size()];
+		int[][] error = new int[4][4];
+		int[][] current = new int[4][4];
+		int ideal = 0;
+
+		// get residual values (prediction error) and save
+		for (int q = 0; q < predicted.size(); q++) {
+			current = predicted.get(q);
+
+			for (int y = 0; y < 4; y++) {
+				for (int x = 0; x < 4; x++) {
+					error[x][y] = actual[x][y] - current[x][y];
+					errorSum[q] += error[x][y];
+				}
+			}
+			residuals.add(error);
+		}
+
+		// find index of smallest error
+		for (int q = 1; q < predicted.size(); q++) {
+			if (errorSum[q] < errorSum[ideal]) {
+				ideal = q;
+			}
+		}
+
+		return residuals.get(ideal);
+	}
+
+	public static int[][] integerTransform(int [][] f, int QP) {
 		int [][] H = {{1,1,1,1},{2,1,-1,-2},{1,-1,-1,1},{1,-2,2,-1}};
 		int [][] Ht = {{1,2,1,1},{1,1,-1,-2},{1,-1,-1,2},{1,-2,1,-1}};
 		double [][] M = {{13107,5243,8066},{11916,4660,7490},{10082,4194,6554},{9362,3647,5825},{8192,3355,5243},{7282,2893,4559}};
 		double [][] intRes = new double[4][4];
 		double [][] intRes2 = new double[4][4];
 		int [][] res = new int[4][4];
-		int QP = 6;
-		
+
+
 		//int [][] f = {{72,82,85,79},{74,75,86,82},{84,73,78,80},{77,81,76,84}};
-		
+
 		for(int i=0; i<4; i++) {
 			for(int j=0; j<4; j++) {
-                for (int k = 0; k < 4; k++) {
-                	intRes[i][j] += f[i][k] * Ht[k][j];
-                }
+				for (int k = 0; k < 4; k++) {
+					intRes[i][j] += f[i][k] * Ht[k][j];
+				}
 			}
 		}
-		
+
 		for(int i=0; i<4; i++) {
 			for(int j=0; j<4; j++) {
-                for (int k = 0; k < 4; k++) {
-                	intRes2[i][j] += H[i][k] * intRes[k][j];
-                }
+				for (int k = 0; k < 4; k++) {
+					intRes2[i][j] += H[i][k] * intRes[k][j];
+				}
 			}
 		}
-		
+
 		if (QP >= 0 && QP < 6) {
 			res[0][0] = (int) Math.round(intRes2[0][0]*(M[QP][0]/(1 << 15)));
 			res[0][1] = (int) Math.round(intRes2[0][1]*(M[QP][2]/(1 << 15)));
@@ -371,10 +628,10 @@ public class mainWindow extends JFrame implements ActionListener{
 			res[3][2] = (int) Math.round(intRes2[3][2]*(M[QP%6][2]/(1 << QP/6)/(1 << 15)));
 			res[3][3] = (int) Math.round(intRes2[3][3]*(M[QP%6][1]/(1 << QP/6)/(1 << 15)));
 		}
-		
+
 		return res;
 	}
-	
+
 	public static int[][] inverseIntegerTransform(/*int [][] F*/) {
 		double [][] HInv = {{1,1,1,1/2},{1,1/2,-1,-1},{1,-1/2,-1,1},{1,-1,1,-1/2}};
 		double [][] HtInv = {{1,1,1,1},{1,1/2,-1/2,-1},{1,-1,-1,1},{1/2,-1,1,-1/2}};
@@ -384,9 +641,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		double [][] intRes3 = new double[4][4];
 		int [][] res = new int[4][4];
 		int QP = 0;
-		
+
 		int [][] F = {{507,-12,-2,2},{0,-7,-14,5},{2,0,-8,-11},{-1,8,4,3}};
-		
+
 		if (QP >= 0 && QP < 6) {
 			intRes[0][0] = F[0][0]*V[QP][0];
 			intRes[0][1] = F[0][1]*V[QP][2];
@@ -423,20 +680,20 @@ public class mainWindow extends JFrame implements ActionListener{
 			intRes[3][2] = F[3][2]*(V[QP%6][2]*(1 << QP/6));
 			intRes[3][3] = F[3][3]*(V[QP%6][1]*(1 << QP/6));
 		}
-		
+
 		for(int i=0; i<4; i++) {
 			for(int j=0; j<4; j++) {
-                for (int k = 0; k < 4; k++) {
-                	intRes2[i][j] += intRes[i][k] * HtInv[k][j];
-                }
+				for (int k = 0; k < 4; k++) {
+					intRes2[i][j] += intRes[i][k] * HtInv[k][j];
+				}
 			}
 		}
-		
+
 		for(int i=0; i<4; i++) {
 			for(int j=0; j<4; j++) {
-                for (int k = 0; k < 4; k++) {
-                	intRes3[i][j] += HInv[i][k] * intRes2[k][j];
-                }
+				for (int k = 0; k < 4; k++) {
+					intRes3[i][j] += HInv[i][k] * intRes2[k][j];
+				}
 			}
 		}
 
@@ -445,57 +702,286 @@ public class mainWindow extends JFrame implements ActionListener{
 				res[i][j] = (int) Math.round(intRes3[i][j]/(1 << 6));
 			}
 		}
-		
+
 		return res;
+	}
+
+	public int[] addRGBChroma(ArrayList<int[]> frame, int mode) {
+		
+		//mode 0 = res
+		//mode 1 = noLumares
+		
+		int[] res = new int[width*height*3];
+    	int[] noLumaRes = new int[width*height*3];
+		
+		int[] frameY = frame.get(0);
+		int[] frameU = frame.get(1);
+		int[] frameV = frame.get(2);
+		
+        for (int x = 0; x < width * height; x++)
+        {
+        	int resR = (int)( frameY[x] 					  + 1.13983 * frameV[x] );
+        	int resG = (int)( frameY[x] - 0.39465 * frameU[x] - 0.58060 * frameV[x] );
+        	int resB = (int)( frameY[x] + 2.03211 * frameU[x]);
+        	
+        	int nolumaR = (int)(  1.13983 *                       frameV[x] );
+        	int nolumaG = (int)(- 0.39465 * frameU[x] - 0.58060 * frameV[x] );
+        	int nolumaB = (int)(+ 2.03211 * frameU[x]);
+        	
+        	// ensure RGB values are within range
+        	if (resR > 255) {resR = 255;}
+        	if (resR < 0) {resR = 0;}
+        	if (resG> 255) {resG = 255;}
+        	if (resG < 0) {resG = 0;}
+        	if (resB > 255) {resB = 255;}
+        	if (resB < 0) {resB = 0;}
+        	
+        	if (nolumaR > 255) {nolumaR = 255;}
+        	if (nolumaR < 0) {nolumaR = 0;}
+        	if (nolumaG> 255) {nolumaG = 255;}
+        	if (nolumaG < 0) {nolumaG = 0;}
+        	if (nolumaB > 255) {nolumaB = 255;}
+        	if (nolumaB < 0) {nolumaB = 0;}
+
+        	// set RGB values in respective locations
+        	res[x * 3] = resR;
+        	res[x * 3 + 1] = resG;
+        	res[x * 3 + 2] = resB;
+        	
+        	noLumaRes[x * 3] = nolumaR;
+        	noLumaRes[x * 3 + 1] = nolumaG;
+        	noLumaRes[x * 3 + 2] = nolumaB;
+        }
+        
+        if(mode == 0) {
+            return res;
+        }
+        else {
+            return noLumaRes;
+        }
+
 	}
 	
 	public void test() {
+
+		JPanel OutputImg, OutputYUVOriginal, OutputYUVChroma, OutputPrediction, OutputTransform, OutputInverseTransform;
 		
-		JPanel OutputImg;
-		IMGPanel m_panelImgOutputY, m_panelImgOutputU, m_panelImgOutputV;
-		BufferedImage m_imgOutputY, m_imgOutputU, m_imgOutputV;
+		IMGPanel 	m_panelImgOutputY, m_panelImgOutputU, m_panelImgOutputV, m_panelImgOutputYUV,
+					m_panelImgOutputYChroma, m_panelImgOutputUChroma, m_panelImgOutputVChroma, m_panelImgOutputYUVChroma,
+					m_panelImgOutputYPrediction, m_panelImgOutputUPrediction, m_panelImgOutputVPrediction, m_panelImgOutputYUVPrediction
+					;
+					//m_panelImgOutputPredictedIFrame, m_panelImgOutputIntegerTransformIFrame;
 		
+		BufferedImage 	m_imgOutputY, m_imgOutputU, m_imgOutputV, m_imgOutputYUV, 
+						m_imgOutputYChroma, m_imgOutputUChroma, m_imgOutputVChroma, m_imgOutputYUVChroma,
+						m_imgOutputYPrediction
+						; 
+						//m_imgOutputPredictedIFrame, m_imgOutputIntegerTransformIFrame;
+		
+		int FRAME_NUM = 0;
+
+		//Set Panels
 		OutputImg = new JPanel();
 		OutputImg.setLayout(null);
-		OutputImg.setLocation(10, 60);
-		OutputImg.setSize(1920, 320);
+		OutputImg.setLocation(0, 70);
+		OutputImg.setSize(1910, 850);
 		totalGUI.add(OutputImg);
+
+		OutputYUVOriginal = new JPanel();
+		OutputYUVOriginal.setLocation(0, 930);
+		OutputYUVOriginal.setSize(310, 80);
+		totalGUI.add(OutputYUVOriginal);
+
+		OutputYUVChroma = new JPanel();
+		OutputYUVChroma.setLocation(310, 930);
+		OutputYUVChroma.setSize(310, 80);
+		totalGUI.add(OutputYUVChroma);
 		
-        m_panelImgOutputY = new IMGPanel();
-        m_panelImgOutputY.setLocation(0, 10);
-        m_panelImgOutputY.setSize(400, 300);
-        OutputImg.add(m_panelImgOutputY);
-        
-        m_panelImgOutputU = new IMGPanel();
-        m_panelImgOutputU.setLocation(410, 10);
-        m_panelImgOutputU.setSize(400, 300);
-        OutputImg.add(m_panelImgOutputU);
-        
-        m_panelImgOutputV = new IMGPanel();
-        m_panelImgOutputV.setLocation(820, 10);
-        m_panelImgOutputV.setSize(400, 300);
-        OutputImg.add(m_panelImgOutputV);
+		OutputPrediction = new JPanel();
+		OutputPrediction.setLocation(620, 930);
+		OutputPrediction.setSize(310, 80);
+		totalGUI.add(OutputPrediction);
 		
-        m_imgOutputY = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-    	WritableRaster rasterY = (WritableRaster) m_imgOutputY.getData();
-    	rasterY.setPixels(0, 0, width, height, ChromaIFrames.get(0).get(0));
-    	m_imgOutputY.setData(rasterY);
-    	m_panelImgOutputY.setBufferedImage(m_imgOutputY);		
-    	
-        m_imgOutputU = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-    	WritableRaster rasterU = (WritableRaster) m_imgOutputU.getData();
-    	rasterU.setPixels(0, 0, width, height, ChromaIFrames.get(0).get(1));
-    	m_imgOutputU.setData(rasterU);
-    	m_panelImgOutputU.setBufferedImage(m_imgOutputU);	
-    	
-        m_imgOutputV = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-    	WritableRaster rasterV = (WritableRaster) m_imgOutputV.getData();
-    	rasterV.setPixels(0, 0, width, height, ChromaIFrames.get(0).get(2));
-    	m_imgOutputV.setData(rasterV);
-    	m_panelImgOutputV.setBufferedImage(m_imgOutputV);	
+		OutputTransform = new JPanel();
+		OutputTransform.setLocation(930, 930);
+		OutputTransform.setSize(310, 80);
+		totalGUI.add(OutputTransform);
 		
+		OutputInverseTransform = new JPanel();
+		OutputInverseTransform.setLocation(1240, 930);
+		OutputInverseTransform.setSize(310, 80);
+		totalGUI.add(OutputInverseTransform);
+		
+		//Column 1
+		m_panelImgOutputY = new IMGPanel();
+		m_panelImgOutputY.setLocation(10, 10);
+		m_panelImgOutputY.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputY);
+
+		m_panelImgOutputU = new IMGPanel();
+		m_panelImgOutputU.setLocation(10, 220);
+		m_panelImgOutputU.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputU);
+
+		m_panelImgOutputV = new IMGPanel();
+		m_panelImgOutputV.setLocation(10, 430);
+		m_panelImgOutputV.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputV);
+		
+		m_panelImgOutputYUV = new IMGPanel();
+		m_panelImgOutputYUV.setLocation(10, 640);
+		m_panelImgOutputYUV.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUV);
+		
+		JLabel YUVOriginal = new JLabel("Original YUV");
+		OutputYUVOriginal.add(YUVOriginal);
+
+		//Column 2
+		m_panelImgOutputYChroma = new IMGPanel();
+		m_panelImgOutputYChroma.setLocation(320, 10);
+		m_panelImgOutputYChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYChroma);
+
+		m_panelImgOutputUChroma = new IMGPanel();
+		m_panelImgOutputUChroma.setLocation(320, 220);
+		m_panelImgOutputUChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUChroma);
+
+		m_panelImgOutputVChroma = new IMGPanel();
+		m_panelImgOutputVChroma.setLocation(320, 430);
+		m_panelImgOutputVChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVChroma);
+		
+		m_panelImgOutputYUVChroma = new IMGPanel();
+		m_panelImgOutputYUVChroma.setLocation(320, 640);
+		m_panelImgOutputYUVChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVChroma);
+		
+		JLabel YUVChroma = new JLabel("YUV 4:2:0 Chroma");
+		OutputYUVChroma.add(YUVChroma);
+		
+		
+		//Column 3
+		m_panelImgOutputYPrediction = new IMGPanel();
+		m_panelImgOutputYPrediction.setLocation(630, 10);
+		m_panelImgOutputYPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYPrediction);
+
+		m_panelImgOutputUPrediction = new IMGPanel();
+		m_panelImgOutputUPrediction.setLocation(630, 220);
+		m_panelImgOutputUPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUPrediction);
+
+		m_panelImgOutputVPrediction = new IMGPanel();
+		m_panelImgOutputVPrediction.setLocation(630, 430);
+		m_panelImgOutputVPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVPrediction);
+		
+		m_panelImgOutputYUVPrediction = new IMGPanel();
+		m_panelImgOutputYUVPrediction.setLocation(630, 640);
+		m_panelImgOutputYUVPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVPrediction);
+		
+		JLabel Prediction = new JLabel("Prediction Image");
+		OutputPrediction.add(Prediction);
+		
+		//Column 4
+		JLabel IntegerTransform = new JLabel("Integer Transform Image");
+		OutputTransform.add(IntegerTransform);
+		
+		//Column 5
+		JLabel InverseTransform = new JLabel("Inverse Integer Transform Image");
+		OutputInverseTransform.add(InverseTransform);
+		
+		//OutputImg.setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.RED));
+		//OutputYUVOriginal.setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.RED));
+		//OutputYUVChroma.setBorder(BorderFactory.createMatteBorder(4, 4, 4, 4, Color.RED));
+		///////
+
+		
+		//Column 1
+		m_imgOutputY = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterY = (WritableRaster) m_imgOutputY.getData();
+		rasterY.setPixels(0, 0, width, height, YUVIFrames.get(FRAME_NUM).get(0));
+		m_imgOutputY.setData(rasterY);
+		m_panelImgOutputY.setBufferedImage(m_imgOutputY);		
+
+		m_imgOutputU = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterU = (WritableRaster) m_imgOutputU.getData();
+		rasterU.setPixels(0, 0, width, height, YUVIFrames.get(FRAME_NUM).get(1));
+		m_imgOutputU.setData(rasterU);
+		m_panelImgOutputU.setBufferedImage(m_imgOutputU);	
+
+		m_imgOutputV = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterV = (WritableRaster) m_imgOutputV.getData();
+		rasterV.setPixels(0, 0, width, height, YUVIFrames.get(FRAME_NUM).get(2));
+		m_imgOutputV.setData(rasterV);
+		m_panelImgOutputV.setBufferedImage(m_imgOutputV);	
+		
+		int[] YUVRes = addRGBChroma(YUVIFrames.get(FRAME_NUM), 0);
+		
+		m_imgOutputYUV = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUV = (WritableRaster) m_imgOutputYUV.getData();
+		rasterYUV.setPixels(0, 0, width, height, YUVRes);
+		m_imgOutputYUV.setData(rasterYUV);
+		m_panelImgOutputYUV.setBufferedImage(m_imgOutputYUV);	
+		
+		//Column 2
+		m_imgOutputYChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYChroma = (WritableRaster) m_imgOutputYChroma.getData();
+		rasterYChroma.setPixels(0, 0, width, height, ChromaIFrames.get(FRAME_NUM).get(0));
+		m_imgOutputYChroma.setData(rasterYChroma);
+		m_panelImgOutputYChroma.setBufferedImage(m_imgOutputYChroma);		
+
+		m_imgOutputUChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUChroma = (WritableRaster) m_imgOutputUChroma.getData();
+		rasterUChroma.setPixels(0, 0, width, height, ChromaIFrames.get(FRAME_NUM).get(1));
+		m_imgOutputUChroma.setData(rasterUChroma);
+		m_panelImgOutputUChroma.setBufferedImage(m_imgOutputUChroma);	
+
+		m_imgOutputVChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVChroma = (WritableRaster) m_imgOutputVChroma.getData();
+		rasterVChroma.setPixels(0, 0, width, height, ChromaIFrames.get(FRAME_NUM).get(2));
+		m_imgOutputVChroma.setData(rasterVChroma);
+		m_panelImgOutputVChroma.setBufferedImage(m_imgOutputVChroma);	
+		
+		int[] YUVChromaRes = addRGBChroma(ChromaIFrames.get(FRAME_NUM), 0);
+		
+		m_imgOutputYUVChroma = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVChroma = (WritableRaster) m_imgOutputYUVChroma.getData();
+		rasterYUVChroma.setPixels(0, 0, width, height, YUVChromaRes);
+		m_imgOutputYUVChroma.setData(rasterYUVChroma);
+		m_panelImgOutputYUVChroma.setBufferedImage(m_imgOutputYUVChroma);	
+		
+		//Column 3
+		
+		ArrayList<int[]> YUVPredictionImage = unblocker(PredictedIFrames.get(FRAME_NUM));
+		
+		m_imgOutputYPrediction = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYPrediction = (WritableRaster) m_imgOutputYPrediction.getData();
+		rasterYPrediction.setPixels(0, 0, width, height, YUVPredictionImage.get(0));
+		m_imgOutputYPrediction.setData(rasterYPrediction);
+		m_panelImgOutputYPrediction.setBufferedImage(m_imgOutputYPrediction);	
+		
+		///////////
+//		m_imgOutputPredictedIFrame = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+//		WritableRaster rasterPredictedIFrame = (WritableRaster) m_imgOutputPredictedIFrame.getData();
+//		rasterPredictedIFrame.setPixels(0, 0, width, height, ChromaIFrames.get(0).get(2));
+//		m_imgOutputPredictedIFrame.setData(rasterPredictedIFrame);
+//		m_panelImgOutputPredictedIFrame.setBufferedImage(m_imgOutputPredictedIFrame);	
+//		
+//		m_imgOutputIntegerTransformIFrame = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+//		WritableRaster rasterIntegerTransformIFrame = (WritableRaster) m_imgOutputIntegerTransformIFrame.getData();
+//		rasterIntegerTransformIFrame.setPixels(0, 0, width, height, ChromaIFrames.get(0).get(2));
+//		m_imgOutputIntegerTransformIFrame.setData(rasterIntegerTransformIFrame);
+//		m_panelImgOutputIntegerTransformIFrame.setBufferedImage(m_imgOutputIntegerTransformIFrame);	
+		
+
 	}
 
+	/*
+	 * 
+	 */
 	private static void createAndShowGUI() {
 		JFrame.setDefaultLookAndFeelDecorated(true);
 		JFrame frame = new JFrame("CMPT 365 Term Project:Video Compression");
@@ -503,9 +989,11 @@ public class mainWindow extends JFrame implements ActionListener{
 		mainWindow window = new mainWindow();
 		frame.setContentPane(window.createContentPane());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(1920, 1050);
+		frame.setSize(1920, 1020);
 		frame.setVisible(true);
+		//frame.setExtendedState(frame.getExtendedState() | frame.MAXIMIZED_BOTH);
 	}
+
 
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
