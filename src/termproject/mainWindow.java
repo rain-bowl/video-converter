@@ -230,7 +230,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	        
 		}
 		else if(evnt.getSource() == buttonCurrentIFrame) {
-	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER I-FRAME NUMBER BETWEEN 0 - "+videoIFrames.size());
+	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER I-FRAME NUMBER BETWEEN 0 - "+(videoIFrames.size()-1));
 	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
 	        
 	        buttonCurrentIFrame.setText("I-FRAME SELECTED = "+FRAME_NUM);
@@ -240,7 +240,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	        
 		}
 		else if(evnt.getSource() == buttonCurrentPFrame) {
-	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER P-FRAME NUMBER BETWEEN 0 - "+videoPFrames.size());
+	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER P-FRAME NUMBER BETWEEN 0 - "+(videoPFrames.size()-1));
 	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
 	        
 	        buttonCurrentIFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
@@ -378,10 +378,10 @@ public class mainWindow extends JFrame implements ActionListener{
 			convertYUV(1);
 			subSampling(YUVPFrames, 1);
 			
-			System.out.println("buttonPFrame");
-			System.out.println("ChromaPFrames.size()/2: " + ChromaPFrames.size()/2);
+			//System.out.println("buttonPFrame");
+			//System.out.println("ChromaPFrames.size()/2: " + ChromaPFrames.size()/2);
 			// Creates 4x4 MB for all frames
-			for(int j=0; j < ChromaPFrames.size()/2; j++) {
+			for(int j=0; j < ChromaPFrames.size(); j++) {
 				BlockerPFrames.add(blocker(ChromaPFrames.get(j), 8));
 //				System.out.println("ChromaPFrames.get(j): " + ChromaPFrames.get(j));
 			}
@@ -412,6 +412,7 @@ public class mainWindow extends JFrame implements ActionListener{
 							int PResidual[] = new int[width*height];
 							int PNewPos[] = new int[width*height];
 							
+							//Moves current pframe to the new location with the offset motion vector
 							for(int k=0; k<width; k++) {
 								for(int l=0; l<height; l++) {
 									
@@ -424,36 +425,11 @@ public class mainWindow extends JFrame implements ActionListener{
 								}
 							}
 							
-							
+							//Take the difference between the current iframe and the motion compensated pframe 
 							for(int o=0; o<width; o++) {
 								for(int n=0; n<height; n++) {
 									PResidual[(n*width)+o] = unblockedCurrentIFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
 
-//							for(int k=0; k<width; k++) {
-//								for(int l=0; l<height; l++) {
-//									
-//									if((l*(width+vector.get(1))+k+vector.get(1)) >= (width*height)) {
-//										PNewPos[(k*width)+k] = 0;
-//									}
-//									else {
-//										PNewPos[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*(width+vector.get(1))+k+vector.get(1))];
-//									}
-									
-									
-									
-									//need to fix
-////									PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width)+k];
-//									if(((l*(width+vector.get(1)))+k+vector.get(0)) >= (width*height)) {
-//										PResidual[(k*l)+k] = 0;
-//									}
-//									else {
-//										//PResidual[(k*l)+k] = unblockedCurrentPFrame.get(m)[(k*l)+k]-unblockedCurrentIFrame.get(m)[(k*l*vector.get(1))+(k+vector.get(0))];
-//										PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*(width+vector.get(1)))+k+vector.get(0)];
-//									}
-//									
-									
-									
-									
 									if(m == 0) {
 										Yres.add(PResidual);
 									}
@@ -477,8 +453,7 @@ public class mainWindow extends JFrame implements ActionListener{
 							}
 						}
 						
-						//ArrayList<ArrayList<int[][]>> reblockedPFrame = blocker(currentFrame, 4);
-						
+						//reblock the pframe so that its in 4x4 blocks for the integer transform
 						for(int y=0; y<currentFrame.size(); y++) {
 								ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(currentFrame.get(y), 4);
 								
@@ -486,85 +461,7 @@ public class mainWindow extends JFrame implements ActionListener{
 								
 								ResidualPFrames.add(reblockedPResidual);
 						}
-						
-						
-
-						
-//						for(int k=0; k<reblockedIFrame.size(); k++) {
-//
-//							ArrayList<int[][]> Yres = new ArrayList<int[][]>();
-//							ArrayList<int[][]> Ures = new ArrayList<int[][]>();
-//							ArrayList<int[][]> Vres = new ArrayList<int[][]>();
-//							
-//							for(int l=0; l<reblockedIFrame.get(k).size(); l++) {
-//								
-////								int PResidual[][] = new int[8][8];			
-//////								
-////								for(int m=0; m<8; m++) {
-////									for(int n=0; n<8; n++) {
-////										PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-unblockedCurrentIFrame.get(k)[];
-////									}
-////								}
-//								
-////								int blockShiftX = vector.get(0) % 8;
-////								int blockShiftY = vector.get(1) % 8;
-////								int shiftedX = vector.get(0)/8;
-////								int shiftedY = vector.get(1)/8;
-////								int blockWidth = width/8;
-////								int blockHeight = height/8;
-//								
-//								
-////								for(int m=0; m<8; m++) {
-////									for(int n=0; n<8; n++) {
-////										if(l+(blockWidth*blockShiftX)+(blockHeight+blockShiftY) > reblockedIFrame.get(k).size()) {
-////											continue;
-////										}
-////										else {
-////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l+(blockWidth*blockShiftX)+(blockHeight+blockShiftY))[(shiftedX)][shiftedY];
-////										}
-////									}
-////								}
-////								for(int m=0; m < 8; m++) {
-////									for(int n=0; n < 8; n++) {
-////										if(m+vector.get(0) > 7 && n+vector.get(1) < 7) {
-////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l+1)[(m+vector.get(0))-8][n+vector.get(1)];
-////										}
-////										else if(m+vector.get(0) > 7 && n+vector.get(1) > 7) {
-////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k+1).get(l+1)[(m+vector.get(0))-8][(n+vector.get(1))-8];
-////										}
-////										else if(m+vector.get(0) < 7 && n+vector.get(1) > 7) {
-////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k+1).get(l)[(m+vector.get(0))][(n+vector.get(1))-8];		
-////										}										
-////										else {
-////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l)[m+vector.get(0)][n+vector.get(1)];
-////										}
-////									}
-////								}
-//
-//								if(k == 0) {
-//									Yres.add(PResidual);
-//								}
-//								else if(k == 1) {
-//									Ures.add(PResidual);
-//								}
-//								else {
-//									Vres.add(PResidual);
-//								}
-//								
-//							}
-//							
-//							if(k == 0) {
-//								currentFrame.add(Yres);
-//							}
-//							else if(k == 1) {
-//								currentFrame.add(Ures);
-//							}
-//							else {
-//								currentFrame.add(Vres);
-//							}
-//						}
-	
-					}	
+					}
 					// Odd P-frames
 					else{
 						
@@ -573,27 +470,6 @@ public class mainWindow extends JFrame implements ActionListener{
 					//ResidualPFrames.add(currentFrame);
 			}
 			
-			//Todo: convert 8x8 residual p frame to 4x4 residual p frame
-			
-//			ArrayList<ArrayList<int[]>> unblockedPResidual = new ArrayList<ArrayList<int[]>>();
-//			
-//			for(int x=0; x<ResidualPFrames.size(); x++) {
-//				ArrayList<int[]> currentFrame = unblocker(ResidualPFrames.get(x));
-//				unblockedPResidual.add(currentFrame);
-//			}
-//			
-//			ResidualPFrames.clear();
-//			
-//			for(int y=0; y<unblockedPResidual.size(); y++) {
-//				for(int z=0; z<unblockedPResidual.get(y).size(); z++) {
-//					ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(unblockedPResidual.get(y), 4);
-//					
-//					System.out.println(reblockedPResidual.get(0).get(0));
-//					
-//					ResidualPFrames.add(reblockedPResidual);
-//				}
-//			}
-
 			PFrameTransform();
 			testP();
 			
@@ -836,9 +712,22 @@ public class mainWindow extends JFrame implements ActionListener{
 	 * Output: creates an Arraylist containing the separate Y, U ,V data -> places this Arraylist into an Arraylist containing all the (I/P/B) frames
 	 */
 	public void convertYUV(int currentMethod) {
-		for(int i = 0; i < videoFrames.size(); i++) {
-			width = videoFrames.get(i).getWidth(null);
-			height = videoFrames.get(i).getHeight(null);
+		
+		ArrayList<BufferedImage> videoFramesTemp = new ArrayList<BufferedImage>();
+		
+		if(currentMethod == 0) {
+			videoFramesTemp = videoIFrames;
+		}
+		else if(currentMethod == 1) {
+			videoFramesTemp = videoPFrames;
+		}
+		else {
+			videoFramesTemp = videoBFrames;
+		}
+		
+		for(int i = 0; i < videoFramesTemp.size(); i++) {
+			width = videoFramesTemp.get(i).getWidth(null);
+			height = videoFramesTemp.get(i).getHeight(null);
 
 			ArrayList<int[]> currentYUVFrame = new ArrayList<int[]>();
 			inputValues = new int[width*height];
@@ -847,7 +736,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			VValues = new int[width*height];
 
 			// Grab Original Image Pixel Values
-			PixelGrabber grabber = new PixelGrabber(videoFrames.get(i).getSource(), 0, 0, width, height, inputValues, 0, width);
+			PixelGrabber grabber = new PixelGrabber(videoFramesTemp.get(i).getSource(), 0, 0, width, height, inputValues, 0, width);
 			try{
 				if(grabber.grabPixels() != true){
 					try {
@@ -1155,7 +1044,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		boolean last = false;
 		
 		int centerCoord = (int) numBlocks/2 - 1; //find middle point
-		int[][] center = Yblocks.get(centerCoord);
+		//int[][] center = Yblocks.get(centerCoord);
 		double minMAD = 666;
 		int minIndex = 0;
 		int lastPosition = centerCoord;
