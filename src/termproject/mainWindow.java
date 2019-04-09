@@ -373,9 +373,12 @@ public class mainWindow extends JFrame implements ActionListener{
 			convertYUV(1);
 			subSampling(YUVPFrames, 1);
 			
+			System.out.println("buttonPFrame");
+			System.out.println("ChromaPFrames.size()/2: " + ChromaPFrames.size()/2);
 			// Creates 4x4 MB for all frames
 			for(int j=0; j < ChromaPFrames.size()/2; j++) {
 				BlockerPFrames.add(blocker(ChromaPFrames.get(j), 8));
+//				System.out.println("ChromaPFrames.get(j): " + ChromaPFrames.get(j));
 			}
 			
 			for(int i=0; i<BlockerPFrames.size(); i++) {
@@ -455,6 +458,9 @@ public class mainWindow extends JFrame implements ActionListener{
 			for(int y=0; y<unblockedPResidual.size(); y++) {
 				for(int z=0; z<unblockedPResidual.get(y).size(); z++) {
 					ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(unblockedPResidual.get(y), 4);
+					
+					System.out.println(reblockedPResidual.get(0).get(0));
+					
 					ResidualPFrames.add(reblockedPResidual);
 				}
 			}
@@ -1019,7 +1025,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		ArrayList<Integer> result = new ArrayList<Integer>(); 
 		boolean last = false;
 		
-		int centerCoord = (int) numBlocks/2; //find middle point
+		int centerCoord = (int) numBlocks/2 - 1; //find middle point
 		int[][] center = Yblocks.get(centerCoord);
 		double minMAD = 666;
 		int minIndex = 0;
@@ -1037,7 +1043,8 @@ public class mainWindow extends JFrame implements ActionListener{
 			int br = (int)centerCoord/2 + centerCoord + offset;
 			
 			int[] positions = new int [] {tl, tm, tr, l, m, r, bl, bm, br};
-			
+			System.out.println("tl, tm, tr, l, m, r, bl, bm, br: " 
+								+ tl + " " + tm + " " + tr + " " + l + " " + m + " " + r + " " + bl + " " + bm + " " + br);
 			nineBlocks.add(0, Yblocks.get(tl));
 			nineBlocks.add(1, Yblocks.get(tm));							// 1/4 spot
 			nineBlocks.add(2, Yblocks.get(tr));
@@ -1071,7 +1078,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				lastPosition = positions[minIndex];
 			}
 			
-			centerCoord = minIndex;
+			centerCoord = positions[minIndex];
 			offset = (int) Math.ceil(offset/2);
 			
 		}
@@ -1106,8 +1113,8 @@ public class mainWindow extends JFrame implements ActionListener{
 		int lastY = (int) Math.floor(last / rowSize);
 		
 		ArrayList<Integer> result = new ArrayList<Integer>();
-		result.add(centerX - lastX);
-		result.add(centerY - lastY);
+		result.add(Math.abs(centerX - lastX));
+		result.add(Math.abs(centerY - lastY));
 
 		return result;
 	}
@@ -1932,9 +1939,10 @@ public class mainWindow extends JFrame implements ActionListener{
 		rasterYUVChroma.setPixels(0, 0, width, height, YUVChromaRGB);
 		m_imgOutputYUVChroma.setData(rasterYUVChroma);
 		m_panelImgOutputYUVChroma.setBufferedImage(m_imgOutputYUVChroma);	
-		
+//		System.out.println("ResidualPFrames.get(FRAME_NUM): " + ResidualPFrames.get(FRAME_NUM));		
 		//Column 3
 		ArrayList<int[]> YUVResidualImage = unblocker(ResidualPFrames.get(FRAME_NUM));
+
 		
 		m_imgOutputYResidual = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
 		WritableRaster rasterYResidual = (WritableRaster) m_imgOutputYResidual.getData();
