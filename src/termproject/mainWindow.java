@@ -20,7 +20,9 @@ public class mainWindow extends JFrame implements ActionListener{
 
 	//Variable declaration for panels/buttons
 	JPanel totalGUI, buttonGUI;
-	JButton buttonOpen, buttonQP, buttonQPP, buttonRefresh, buttonIFrame, buttonPFrame, buttonCurrentIFrame, buttonCurrentPFrame;  
+	JButton buttonOpen, buttonQP, buttonQPP, buttonQPB,
+			buttonIFrame, buttonPFrame, buttonBFrame,
+			buttonCurrentIFrame, buttonCurrentPFrame, buttonCurrentBFrame;  
 
 	//Creates new file chooser object
 	JFileChooser m_fc = new JFileChooser();
@@ -49,22 +51,28 @@ public class mainWindow extends JFrame implements ActionListener{
 	//Arraylist of all I frames containing the blocks of Y,U,V frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> BlockerBFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
 	//Arraylist of all I frames containing the intra-predicted frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> PredictedIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> PredictedBFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	
 	//Arraylist of all I frames containing the intra-predicted frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> ResidualIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	ArrayList<ArrayList<ArrayList<int[][]>>> ResidualPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> ResidualBFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
 	//Arraylist of all I frames containing the integer transformed frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformBFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	
 	//Arraylist of all I frames containing the integer transformed frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerInverseTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerInverseTransformPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerInverseTransformBFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
+	
 	//Video Properties
 	int width, height;
 	int YValues[], UValues[], VValues[], inputValues[];
@@ -76,7 +84,9 @@ public class mainWindow extends JFrame implements ActionListener{
 	int MAX_FRAMES = 10;
 
 	//Set the Quality Factor
-	int QP = 6;
+	int QP = 0;
+	
+	//Set the frame to display
 	int FRAME_NUM = 0;
 
 	public JPanel createContentPane(){	   
@@ -132,16 +142,23 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonCurrentPFrame.addActionListener(this);
 		buttonGUI.add(buttonCurrentPFrame);
 		
+		buttonQPB = new JButton("QP B-VALUE = "+QP);
+		buttonQPB.setLocation(1180, 0);
+		buttonQPB.setSize(150, 40);
+		buttonQPB.addActionListener(this);
+		buttonGUI.add(buttonQPB);
 		
-		buttonRefresh = new JButton("REFRESH SCREEN");
-		buttonRefresh.setLocation(1720, 0);
-		buttonRefresh.setSize(180, 40);
-		buttonRefresh.addActionListener(this);
-		buttonGUI.add(buttonRefresh);
-
-//		String inputStringQP = JOptionPane.showInputDialog(null, "ENTER QP VALUE");
-//        QP = Integer.parseInt(inputStringQP);
-//        buttonQP.setText("QP VALUE="+QP);
+		buttonBFrame = new JButton("4. ANALYZE BFRAME");
+		buttonBFrame.setLocation(1340, 0);
+		buttonBFrame.setSize(150, 40);
+		buttonBFrame.addActionListener(this);
+		buttonGUI.add(buttonBFrame);
+		
+		buttonCurrentBFrame = new JButton("B-FRAME SELECTED = "+FRAME_NUM);
+		buttonCurrentBFrame.setLocation(1500, 0);
+		buttonCurrentBFrame.setSize(180, 40);
+		buttonCurrentBFrame.addActionListener(this);
+		buttonGUI.add(buttonCurrentBFrame);
         
 		String inputStringMaxFrames = JOptionPane.showInputDialog(null, "ENTER NUMBER OF FRAMES TO ENCODE (KEEP NUM = (9*N)+1)");
         MAX_FRAMES = Integer.parseInt(inputStringMaxFrames);
@@ -152,6 +169,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	}
 	
 	public void reset() {
+		
 		//Reset Arraylists
 		videoFrames.clear();
 		videoIFrames.clear();
@@ -165,13 +183,43 @@ public class mainWindow extends JFrame implements ActionListener{
 		ChromaBFrames.clear();
 		BlockerIFrames.clear();
 		BlockerPFrames.clear();
+		BlockerBFrames.clear();
 		PredictedIFrames.clear();
+		PredictedBFrames.clear();
 		ResidualIFrames.clear();
 		ResidualPFrames.clear();
+		ResidualBFrames.clear();
 		IntegerTransformIFrames.clear();
 		IntegerTransformPFrames.clear();
+		IntegerTransformBFrames.clear();
 		IntegerInverseTransformIFrames.clear();
 		IntegerInverseTransformPFrames.clear();
+		IntegerInverseTransformBFrames.clear();
+	}
+	
+	public void resetAll() {
+		
+		//Reset Arraylists
+		YUVIFrames.clear();
+		YUVPFrames.clear();
+		YUVBFrames.clear();
+		ChromaIFrames.clear();
+		ChromaPFrames.clear();
+		ChromaBFrames.clear();
+		BlockerIFrames.clear();
+		BlockerPFrames.clear();
+		BlockerBFrames.clear();
+		PredictedIFrames.clear();
+		PredictedBFrames.clear();
+		ResidualIFrames.clear();
+		ResidualPFrames.clear();
+		ResidualBFrames.clear();
+		IntegerTransformIFrames.clear();
+		IntegerTransformPFrames.clear();
+		IntegerTransformBFrames.clear();
+		IntegerInverseTransformIFrames.clear();
+		IntegerInverseTransformPFrames.clear();
+		IntegerInverseTransformBFrames.clear();
 	}
 
 	public void actionPerformed(ActionEvent evnt) {
@@ -193,7 +241,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				separateFrames();
 				
 				JOptionPane.showMessageDialog(totalGUI,
-					    "File Successfully Opened",
+					    "File Successfully Opened.",
 					    "Success",
 					    JOptionPane.PLAIN_MESSAGE);
 		
@@ -205,26 +253,50 @@ public class mainWindow extends JFrame implements ActionListener{
 	        
 	        buttonQP.setText("QP I-VALUE="+QP);
 	        buttonQPP.setText("QP P-VALUE="+QP);
+	        buttonQPB.setText("QP B-VALUE="+QP);
 	        
 	        IntegerTransformIFrames.clear();
 	        IntegerInverseTransformIFrames.clear();
+	        
 	        IFrameTransform();
 	        test();
+	        
 	        totalGUI.revalidate();
 	        totalGUI.repaint();
 	        
 		}
 		else if(evnt.getSource() == buttonQPP) {
-	        String inputStringQP = JOptionPane.showInputDialog(null, "ENTER NEW QP PFRAME VALUE");
-	        QP = Integer.parseInt(inputStringQP);
+	        String inputStringQPP = JOptionPane.showInputDialog(null, "ENTER NEW QP PFRAME VALUE");
+	        QP = Integer.parseInt(inputStringQPP);
 	        
 	        buttonQP.setText("QP I-VALUE="+QP);
 	        buttonQPP.setText("QP P-VALUE="+QP);
+	        buttonQPB.setText("QP B-VALUE="+QP);
 	        
 	        IntegerTransformPFrames.clear();
 	        IntegerInverseTransformPFrames.clear();
+	        
 	        PFrameTransform();
 	        testP();
+	        
+	        totalGUI.revalidate();
+	        totalGUI.repaint();
+	        
+		}
+		else if(evnt.getSource() == buttonQPB) {
+	        String inputStringQPB = JOptionPane.showInputDialog(null, "ENTER NEW QP BFRAME VALUE");
+	        QP = Integer.parseInt(inputStringQPB);
+	        
+	        buttonQP.setText("QP I-VALUE="+QP);
+	        buttonQPP.setText("QP P-VALUE="+QP);
+	        buttonQPB.setText("QP B-VALUE="+QP);
+	        
+	        IntegerTransformBFrames.clear();
+	        IntegerInverseTransformBFrames.clear();
+	        
+	        BFrameTransform();
+	        testB();
+	        
 	        totalGUI.revalidate();
 	        totalGUI.repaint();
 	        
@@ -234,7 +306,11 @@ public class mainWindow extends JFrame implements ActionListener{
 	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
 	        
 	        buttonCurrentIFrame.setText("I-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentPFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentBFrame.setText("B-FRAME SELECTED = "+FRAME_NUM);
+	        
 	        test();
+	        
 			totalGUI.revalidate();
 			totalGUI.repaint();
 	        
@@ -243,37 +319,48 @@ public class mainWindow extends JFrame implements ActionListener{
 	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER P-FRAME NUMBER BETWEEN 0 - "+(videoPFrames.size()-1));
 	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
 	        
+	        buttonCurrentIFrame.setText("I-FRAME SELECTED = "+FRAME_NUM);
 	        buttonCurrentPFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentBFrame.setText("B-FRAME SELECTED = "+FRAME_NUM);
+	        
 	        testP();
+	        
+			totalGUI.revalidate();
+			totalGUI.repaint();
+		}
+		else if(evnt.getSource() == buttonCurrentBFrame) {
+	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER B-FRAME NUMBER BETWEEN 0 - "+(videoBFrames.size()-1));
+	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
+	        
+	        buttonCurrentIFrame.setText("I-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentPFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentBFrame.setText("B-FRAME SELECTED = "+FRAME_NUM);
+	        
+	        testB();
+	        
 			totalGUI.revalidate();
 			totalGUI.repaint();
 		}
 		else if(evnt.getSource() == buttonIFrame) {
 			
-			//Reset
-			YUVIFrames.clear();
-			ChromaIFrames.clear();
-			BlockerIFrames.clear();
-			PredictedIFrames.clear();
-			ResidualIFrames.clear();
+			// Reset Everything
+			resetAll();
 			
-			// I-Frames Encoding
+			// RGB -> YUV and Sub Sampling 4:2:0
 			convertYUV(0);
 			subSampling(YUVIFrames, 0);
 
-			// Creates 4x4 MB for all frames
+			// Creates 4x4 MB for all I frames
 			for(int i=0; i < ChromaIFrames.size(); i++) {
 				BlockerIFrames.add(blocker(ChromaIFrames.get(i), 4));
 			}
 
-			// Gets a frame
+			// For each Iframe, do the following
 			for(int i=0; i < BlockerIFrames.size(); i++) {
 
 				ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
 				// Performs 4x4 Intra-prediction for all Y,U,V 4x4 blocks
-				//Gets the YUV arrays in a frame
-				//System.out.println(BlockerIFrames.get(i).size());
 				for(int j=0; j < BlockerIFrames.get(i).size(); j++) {
 
 					ArrayList<int[][]> Yres = new ArrayList<int[][]>();
@@ -281,11 +368,9 @@ public class mainWindow extends JFrame implements ActionListener{
 					ArrayList<int[][]> Vres = new ArrayList<int[][]>();
 
 					//Gets the 4x4 blocks in each Y,U,V frame
-					//System.out.println(BlockerIFrames.get(i).get(j).size());
 					for(int k=0; k < BlockerIFrames.get(i).get(j).size(); k++) {
 
 						//For each block, do intra-prediction
-						//System.out.println(BlockerIFrames.get(i).get(j).get(k));
 						ArrayList<int[][]> blockRes = intra(BlockerIFrames.get(i).get(j).get(k));
 
 						//Choose the best predictor
@@ -316,27 +401,23 @@ public class mainWindow extends JFrame implements ActionListener{
 				PredictedIFrames.add(currentFrame);
 			}
 
-			// Gets a frame
+			// For each Iframe, do the following
 			for(int i=0; i < PredictedIFrames.size(); i++) {
 
 				ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
-				// Performs 4x4 Intra-prediction for all Y,U,V 4x4 blocks
-				//Gets the YUV arrays in a frame
-				System.out.println(PredictedIFrames.get(i).size());
+				// Obtains residuals from original-prediction for all Y,U,V frames
 				for(int j=0; j < PredictedIFrames.get(i).size(); j++) {
 
 					ArrayList<int[][]> Yres = new ArrayList<int[][]>();
 					ArrayList<int[][]> Ures = new ArrayList<int[][]>();
 					ArrayList<int[][]> Vres = new ArrayList<int[][]>();
 
-					//Gets the 4x4 blocks in each Y,U,V frame
-					System.out.println(PredictedIFrames.get(i).get(j).size());
 					for(int k=0; k < PredictedIFrames.get(i).get(j).size(); k++) {
 
-						//For each block, do intra-prediction
 						int chosenPrediction[][] = new int[4][4];
 						
+						//Obtain residuals in each MB
 						for(int l=0; l < 4; l++) {
 							for(int m=0; m < 4; m++) {
 								chosenPrediction[l][m] = BlockerIFrames.get(i).get(j).get(k)[l][m]-PredictedIFrames.get(i).get(j).get(k)[l][m];
@@ -368,40 +449,40 @@ public class mainWindow extends JFrame implements ActionListener{
 				ResidualIFrames.add(currentFrame);
 			}
 			
+			//Call integer transform
 			IFrameTransform();
 			
 			test();
+			
 			totalGUI.revalidate();
+			totalGUI.repaint();
 		}
 		else if(evnt.getSource() == buttonPFrame) {
 			
 			convertYUV(1);
 			subSampling(YUVPFrames, 1);
 			
-			//System.out.println("buttonPFrame");
-			//System.out.println("ChromaPFrames.size()/2: " + ChromaPFrames.size()/2);
-			// Creates 4x4 MB for all frames
+			// Creates 4x4 MB for all P frames
 			for(int j=0; j < ChromaPFrames.size(); j++) {
 				BlockerPFrames.add(blocker(ChromaPFrames.get(j), 8));
-//				System.out.println("ChromaPFrames.get(j): " + ChromaPFrames.get(j));
 			}
 			
+			//For each frame, do the following
 			for(int i=0; i<BlockerPFrames.size(); i++) {
 				
+				//Create placeholder for results
 				ArrayList<int[]> currentFrame = new ArrayList<int[]>();
 				currentFrame.clear();
 				
-				//Even Pframes
+				//For even Pframes, get residual info from the previous I frame
 					if(i % 2 == 0) {
 						
 						ArrayList<int[]> unblockedCurrentIFrame = unblocker(IntegerInverseTransformIFrames.get(i/2));
-						
 						ArrayList<ArrayList<int[][]>> reblockedIFrame = blocker(unblockedCurrentIFrame, 8);
-						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);
-						
+						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);	
 						ArrayList<int[]> unblockedCurrentPFrame = unblocker(CurrentPFrame);
 						
-						//Do motion estimation here
+						//Motion vector estimation
 						ArrayList<Integer> vector = motionLogSearch(CurrentPFrame, reblockedIFrame);
 						
 						for(int m=0; m<unblockedCurrentPFrame.size(); m++) {
@@ -413,7 +494,7 @@ public class mainWindow extends JFrame implements ActionListener{
 							int PResidual[] = new int[width*height];
 							int PNewPos[] = new int[width*height];
 							
-							//Moves current pframe to the new location with the offset motion vector
+							//Moves current Pframe to the new location with the offset motion vector
 							for(int k=0; k<width; k++) {
 								for(int l=0; l<height; l++) {
 									
@@ -426,7 +507,7 @@ public class mainWindow extends JFrame implements ActionListener{
 								}
 							}
 							
-							//Take the difference between the current iframe and the motion compensated pframe 
+							//Take the difference between the current Iframe and the motion compensated Pframe 
 							for(int o=0; o<width; o++) {
 								for(int n=0; n<height; n++) {
 									PResidual[(n*width)+o] = unblockedCurrentIFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
@@ -454,25 +535,22 @@ public class mainWindow extends JFrame implements ActionListener{
 							}
 						}
 						
-						//ArrayList<ArrayList<ArrayList<int[][]>>>
-//						ArrayList<ArrayList<int[][]>> reblockedPResidual = new ArrayList<ArrayList<int[][]>>();
-//						
-//						//reblock the pframe so that its in 4x4 blocks for the integer transform
+						//reblock the Pframe so that its in 4x4 blocks for the integer transform
 						ArrayList<ArrayList<int[][]>> reblockedPResidualYUV = blocker(currentFrame, 4);
 						ResidualPFrames.add(reblockedPResidualYUV);
+						
+						//Perform integer transform and inverse integer transform on PFrame
 						PFrameTransform();
 						
 				}
-					// Odd P-frames
+					//For odd Pframes, get residual info from the previous Pframe
 					else{
 						ArrayList<int[]> unblockedPreviousPFrame = unblocker(IntegerInverseTransformPFrames.get(i-1));
-						
 						ArrayList<ArrayList<int[][]>> reblockedPFrame = blocker(unblockedPreviousPFrame, 8);
-						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);
-						
+						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);				
 						ArrayList<int[]> unblockedCurrentPFrame = unblocker(CurrentPFrame);
 						
-						//Do motion estimation here
+						//Motion vector estimation
 						ArrayList<Integer> vector = motionLogSearch(CurrentPFrame, reblockedPFrame);
 						
 						for(int m=0; m<unblockedCurrentPFrame.size(); m++) {
@@ -497,7 +575,7 @@ public class mainWindow extends JFrame implements ActionListener{
 								}
 							}
 							
-							//Take the difference between the current iframe and the motion compensated pframe 
+							//Take the difference between the previous Pframe and the motion compensated Pframe 
 							for(int o=0; o<width; o++) {
 								for(int n=0; n<height; n++) {
 									PResidual[(n*width)+o] = unblockedPreviousPFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
@@ -525,21 +603,24 @@ public class mainWindow extends JFrame implements ActionListener{
 							}
 						}
 						
+						//reblock the Pframe so that its in 4x4 blocks for the integer transform
 						ArrayList<ArrayList<int[][]>> reblockedPResidualYUV = blocker(currentFrame, 4);
 						ResidualPFrames.add(reblockedPResidualYUV);
+						
+						//Perform integer transform and inverse integer transform on PFrame
 						PFrameTransform();
 						
 					}
 			}
 
 			testP();
+			
 			totalGUI.revalidate();
 			totalGUI.repaint();
 		}
-    	else if (evnt.getSource() == buttonRefresh) {
-    	    totalGUI.revalidate();
-    	    totalGUI.repaint();
-    	}
+		else if(evnt.getSource() == buttonBFrame) {
+			
+		}
 	}
 
 	public void IFrameTransform() {
@@ -547,7 +628,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
 			// Performs 4x4 integer transform on all blocks
-			//Gets the predicted Y,U,V arrays in a frame
+			// Gets the Y,U,V arrays in a frame
 			for(int j=0; j < ResidualIFrames.get(i).size(); j++) {
 
 				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
@@ -557,7 +638,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				//Gets the 4x4 blocks in each Y,U,V frame
 				for(int k=0; k < ResidualIFrames.get(i).get(j).size(); k++) {
 
-					//For each block, do intra-prediction
+					//For each block, do integer transform
 					int[][] blockTransformed = integerTransform(ResidualIFrames.get(i).get(j).get(k), QP);
 
 					if(j == 0) {
@@ -590,8 +671,8 @@ public class mainWindow extends JFrame implements ActionListener{
 
 			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
-			// Performs 4x4 integer transform on all blocks
-			//Gets the predicted Y,U,V arrays in a frame
+			// Performs 4x4 inverse integer transform on all blocks
+			// Gets the Y,U,V arrays in a frame
 			for(int j=0; j < IntegerTransformIFrames.get(i).size(); j++) {
 
 				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
@@ -601,7 +682,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				//Gets the 4x4 blocks in each Y,U,V frame
 				for(int k=0; k < IntegerTransformIFrames.get(i).get(j).size(); k++) {
 
-					//For each block, do intra-prediction
+					//For each block, do inverse integer transform
 					int[][] blockTransformed = inverseIntegerTransform(IntegerTransformIFrames.get(i).get(j).get(k), QP);
 
 					if(j == 0) {
@@ -638,7 +719,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
 			// Performs 4x4 integer transform on all blocks
-			//Gets the predicted Y,U,V arrays in a frame
+			// Gets the Y,U,V arrays in a frame
 			for(int j=0; j < ResidualPFrames.get(i).size(); j++) {
 
 				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
@@ -648,7 +729,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				//Gets the 4x4 blocks in each Y,U,V frame
 				for(int k=0; k < ResidualPFrames.get(i).get(j).size(); k++) {
 
-					//For each block, do intra-prediction
+					//For each block, do integer transform
 					int[][] blockTransformed = integerTransform(ResidualPFrames.get(i).get(j).get(k), QP);
 
 					if(j == 0) {
@@ -682,7 +763,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
 			// Performs 4x4 integer transform on all blocks
-			//Gets the predicted Y,U,V arrays in a frame
+			// Gets the Y,U,V arrays in a frame
 			for(int j=0; j < IntegerTransformPFrames.get(i).size(); j++) {
 
 				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
@@ -692,7 +773,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				//Gets the 4x4 blocks in each Y,U,V frame
 				for(int k=0; k < IntegerTransformPFrames.get(i).get(j).size(); k++) {
 
-					//For each block, do intra-prediction
+					//For each block, do inverse integer transform
 					int[][] blockTransformed = inverseIntegerTransform(IntegerTransformPFrames.get(i).get(j).get(k), QP);
 
 					if(j == 0) {
@@ -718,6 +799,97 @@ public class mainWindow extends JFrame implements ActionListener{
 			}
 
 			IntegerInverseTransformPFrames.add(currentFrame);
+		}
+	}
+	
+	public void BFrameTransform() {
+		IntegerTransformBFrames.clear();
+		IntegerInverseTransformBFrames.clear();
+		
+		for(int i=0; i < ResidualBFrames.size(); i++) {
+			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+
+			// Performs 4x4 integer transform on all blocks
+			// Gets the Y,U,V arrays in a frame
+			for(int j=0; j < ResidualBFrames.get(i).size(); j++) {
+
+				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+				ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+				ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+
+				//Gets the 4x4 blocks in each Y,U,V frame
+				for(int k=0; k < ResidualBFrames.get(i).get(j).size(); k++) {
+
+					//For each block, do integer transform
+					int[][] blockTransformed = integerTransform(ResidualBFrames.get(i).get(j).get(k), QP);
+
+					if(j == 0) {
+						Yres.add(blockTransformed);
+					}
+					else if(j == 1) {
+						Ures.add(blockTransformed);
+					}
+					else {
+						Vres.add(blockTransformed);
+					}
+				}
+
+				if(j == 0) {
+					currentFrame.add(Yres);
+				}
+				else if(j == 1) {
+					currentFrame.add(Ures);
+				}
+				else {
+					currentFrame.add(Vres);
+				}
+			}
+
+			IntegerTransformBFrames.add(currentFrame);
+		}
+
+		
+		for(int i=0; i < IntegerTransformBFrames.size(); i++) {
+
+			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+
+			// Performs 4x4 integer transform on all blocks
+			// Gets the Y,U,V arrays in a frame
+			for(int j=0; j < IntegerTransformBFrames.get(i).size(); j++) {
+
+				ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+				ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+				ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+
+				//Gets the 4x4 blocks in each Y,U,V frame
+				for(int k=0; k < IntegerTransformBFrames.get(i).get(j).size(); k++) {
+
+					//For each block, do inverse integer transform
+					int[][] blockTransformed = inverseIntegerTransform(IntegerTransformBFrames.get(i).get(j).get(k), QP);
+
+					if(j == 0) {
+						Yres.add(blockTransformed);
+					}
+					else if(j == 1) {
+						Ures.add(blockTransformed);
+					}
+					else {
+						Vres.add(blockTransformed);
+					}
+				}
+
+				if(j == 0) {
+					currentFrame.add(Yres);
+				}
+				else if(j == 1) {
+					currentFrame.add(Ures);
+				}
+				else {
+					currentFrame.add(Vres);
+				}
+			}
+
+			IntegerInverseTransformBFrames.add(currentFrame);
 		}
 	}
 	
@@ -1100,7 +1272,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		ArrayList<int[][]> Yblocks = currentFrame.get(0);
 		int numBlocks = Yblocks.size(); // get number of Y blocks
 		int rowSize = (int) Math.sqrt(numBlocks);
-		int p = (int) Math.ceil(Math.sqrt(numBlocks)/2);		
+		int p = (int) Math.ceil(Math.sqrt(numBlocks)/2);	
 		int offset = (int) Math.ceil(p/2);
 		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
 		ArrayList<int[][]> refBlocks = new ArrayList<int[][]>();
@@ -1113,6 +1285,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		double minMAD = 666;
 		int minIndex = 0;
 		int lastPosition = centerCoord;
+
 			int tl = (int)centerCoord/2 - offset;
 			int tm = (int)centerCoord/2;
 			int tr = (int)centerCoord/2 + offset;
@@ -1122,21 +1295,22 @@ public class mainWindow extends JFrame implements ActionListener{
 			int bl = (int)centerCoord/2 + centerCoord - offset;
 			int bm = (int)centerCoord/2 + centerCoord;
 			int br = (int)centerCoord/2 + centerCoord + offset;
-		
-		while (last != true) {
-			tl = centerCoord - offset * rowSize - offset;
-			tm = centerCoord - offset * rowSize;
-			tr = centerCoord - offset * rowSize + offset;
-			l  = centerCoord - offset;
-			m  = centerCoord;
-			r  = centerCoord + offset;
-			bl = centerCoord + offset * rowSize - offset;
-			bm = centerCoord + offset * rowSize;
-			br = centerCoord + offset * rowSize + offset;
 			
+			
+			while (last != true) {
+				tl = centerCoord - offset * rowSize - offset;
+				tm = centerCoord - offset * rowSize;
+				tr = centerCoord - offset * rowSize + offset;
+				l  = centerCoord - offset;
+				m  = centerCoord;
+				r  = centerCoord + offset;
+				bl = centerCoord + offset * rowSize - offset;
+				bm = centerCoord + offset * rowSize;
+				br = centerCoord + offset * rowSize + offset;
+				
 			int[] positions = new int [] {tl, tm, tr, l, m, r, bl, bm, br};
 			System.out.println("offset: tl, tm, tr, l, m, r, bl, bm, br: " 
-								+ offset + " " + tl + " " + tm + " " + tr + " " + l + " " + m + " " + r + " " + bl + " " + bm + " " + br);
+					+ offset + " " + tl + " " + tm + " " + tr + " " + l + " " + m + " " + r + " " + bl + " " + bm + " " + br);
 			nineBlocks.add(0, Yblocks.get(tl));
 			nineBlocks.add(1, Yblocks.get(tm));							// 1/4 spot
 			nineBlocks.add(2, Yblocks.get(tr));
@@ -1169,6 +1343,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				last = true;
 				lastPosition = positions[minIndex];
 			}
+			
 			System.out.println("centerCoord: " + centerCoord);
 			centerCoord = positions[minIndex];
 			offset = (int) Math.ceil(offset/2);
@@ -2122,6 +2297,380 @@ public class mainWindow extends JFrame implements ActionListener{
 		m_imgOutputYUVInverse.setData(rasterYUVInverse);
 		m_panelImgOutputYUVInverse.setBufferedImage(m_imgOutputYUVInverse);	
 	}
+	
+	public void testB() {
+
+		JPanel OutputImg, OutputYUVOriginal, OutputYUVChroma, OutputPrediction, OutputResidual, OutputTransform, OutputInverseTransform;
+		
+		IMGPanel 	m_panelImgOutputY, m_panelImgOutputU, m_panelImgOutputV, m_panelImgOutputYUV,
+					m_panelImgOutputYChroma, m_panelImgOutputUChroma, m_panelImgOutputVChroma, m_panelImgOutputYUVChroma,
+					m_panelImgOutputYPrediction, m_panelImgOutputUPrediction, m_panelImgOutputVPrediction, m_panelImgOutputYUVPrediction,
+					m_panelImgOutputYResidual, m_panelImgOutputUResidual, m_panelImgOutputVResidual, m_panelImgOutputYUVResidual,
+					m_panelImgOutputYTransform, m_panelImgOutputUTransform, m_panelImgOutputVTransform, m_panelImgOutputYUVTransform,
+					m_panelImgOutputYInverse, m_panelImgOutputUInverse, m_panelImgOutputVInverse, m_panelImgOutputYUVInverse
+					;
+					//m_panelImgOutputPredictedIFrame, m_panelImgOutputIntegerTransformIFrame;
+		
+		BufferedImage 	m_imgOutputY, m_imgOutputU, m_imgOutputV, m_imgOutputYUV, 
+						m_imgOutputYChroma, m_imgOutputUChroma, m_imgOutputVChroma, m_imgOutputYUVChroma,
+						m_imgOutputYPrediction, m_imgOutputUPrediction, m_imgOutputVPrediction, m_imgOutputYUVPrediction,
+						m_imgOutputYResidual, m_imgOutputUResidual, m_imgOutputVResidual, m_imgOutputYUVResidual,
+						m_imgOutputYTransform, m_imgOutputUTransform, m_imgOutputVTransform,
+						m_imgOutputYInverse, m_imgOutputUInverse, m_imgOutputVInverse, m_imgOutputYUVInverse
+						; 
+						//m_imgOutputPredictedIFrame, m_imgOutputIntegerTransformIFrame;
+		
+		totalGUI.removeAll(); 
+		totalGUI.add(buttonGUI);
+		
+		//Set Panels
+		OutputImg = new JPanel();
+		OutputImg.setLayout(null);
+		OutputImg.setLocation(0, 70);
+		OutputImg.setSize(1910, 850);
+		totalGUI.add(OutputImg);
+
+		OutputYUVOriginal = new JPanel();
+		OutputYUVOriginal.setLocation(0, 930);
+		OutputYUVOriginal.setSize(310, 80);
+		totalGUI.add(OutputYUVOriginal);
+
+		OutputYUVChroma = new JPanel();
+		OutputYUVChroma.setLocation(310, 930);
+		OutputYUVChroma.setSize(310, 80);
+		totalGUI.add(OutputYUVChroma);
+		
+		OutputPrediction = new JPanel();
+		OutputPrediction.setLocation(620, 930);
+		OutputPrediction.setSize(310, 80);
+		totalGUI.add(OutputPrediction);
+		
+		OutputResidual = new JPanel();
+		OutputResidual.setLocation(930, 930);
+		OutputResidual.setSize(310, 80);
+		totalGUI.add(OutputResidual);
+		
+		OutputTransform = new JPanel();
+		OutputTransform.setLocation(1240, 930);
+		OutputTransform.setSize(310, 80);
+		totalGUI.add(OutputTransform);
+		
+		OutputInverseTransform = new JPanel();
+		OutputInverseTransform.setLocation(1550, 930);
+		OutputInverseTransform.setSize(310, 80);
+		totalGUI.add(OutputInverseTransform);
+		
+		//Column 1
+		m_panelImgOutputY = new IMGPanel();
+		m_panelImgOutputY.setLocation(10, 10);
+		m_panelImgOutputY.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputY);
+
+		m_panelImgOutputU = new IMGPanel();
+		m_panelImgOutputU.setLocation(10, 220);
+		m_panelImgOutputU.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputU);
+
+		m_panelImgOutputV = new IMGPanel();
+		m_panelImgOutputV.setLocation(10, 430);
+		m_panelImgOutputV.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputV);
+		
+		m_panelImgOutputYUV = new IMGPanel();
+		m_panelImgOutputYUV.setLocation(10, 640);
+		m_panelImgOutputYUV.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUV);
+		
+		JLabel YUVOriginal = new JLabel("Original YUV");
+		OutputYUVOriginal.add(YUVOriginal);
+
+		//Column 2
+		m_panelImgOutputYChroma = new IMGPanel();
+		m_panelImgOutputYChroma.setLocation(320, 10);
+		m_panelImgOutputYChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYChroma);
+
+		m_panelImgOutputUChroma = new IMGPanel();
+		m_panelImgOutputUChroma.setLocation(320, 220);
+		m_panelImgOutputUChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUChroma);
+
+		m_panelImgOutputVChroma = new IMGPanel();
+		m_panelImgOutputVChroma.setLocation(320, 430);
+		m_panelImgOutputVChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVChroma);
+		
+		m_panelImgOutputYUVChroma = new IMGPanel();
+		m_panelImgOutputYUVChroma.setLocation(320, 640);
+		m_panelImgOutputYUVChroma.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVChroma);
+		
+		JLabel YUVChroma = new JLabel("YUV 4:2:0 Chroma");
+		OutputYUVChroma.add(YUVChroma);
+		
+		
+		//Column 3
+		m_panelImgOutputYPrediction = new IMGPanel();
+		m_panelImgOutputYPrediction.setLocation(630, 10);
+		m_panelImgOutputYPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYPrediction);
+
+		m_panelImgOutputUPrediction = new IMGPanel();
+		m_panelImgOutputUPrediction.setLocation(630, 220);
+		m_panelImgOutputUPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUPrediction);
+
+		m_panelImgOutputVPrediction = new IMGPanel();
+		m_panelImgOutputVPrediction.setLocation(630, 430);
+		m_panelImgOutputVPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVPrediction);
+		
+		m_panelImgOutputYUVPrediction = new IMGPanel();
+		m_panelImgOutputYUVPrediction.setLocation(630, 640);
+		m_panelImgOutputYUVPrediction.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVPrediction);
+		
+		JLabel Prediction = new JLabel("Prediction Image");
+		OutputPrediction.add(Prediction);
+		
+		//Column 4
+		m_panelImgOutputYResidual = new IMGPanel();
+		m_panelImgOutputYResidual.setLocation(940, 10);
+		m_panelImgOutputYResidual.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYResidual);
+		
+		m_panelImgOutputUResidual = new IMGPanel();
+		m_panelImgOutputUResidual.setLocation(940, 220);
+		m_panelImgOutputUResidual.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUResidual);
+		
+		m_panelImgOutputVResidual = new IMGPanel();
+		m_panelImgOutputVResidual.setLocation(940, 430);
+		m_panelImgOutputVResidual.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVResidual);
+		
+		m_panelImgOutputYUVResidual = new IMGPanel();
+		m_panelImgOutputYUVResidual.setLocation(940, 640);
+		m_panelImgOutputYUVResidual.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVResidual);
+		
+		JLabel Residual = new JLabel("Residual Image");
+		OutputResidual.add(Residual);
+		
+		//Column 5
+		m_panelImgOutputYTransform = new IMGPanel();
+		m_panelImgOutputYTransform.setLocation(1250, 10);
+		m_panelImgOutputYTransform.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYTransform);
+
+		m_panelImgOutputUTransform = new IMGPanel();
+		m_panelImgOutputUTransform.setLocation(1250, 220);
+		m_panelImgOutputUTransform.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUTransform);
+		
+		m_panelImgOutputVTransform = new IMGPanel();
+		m_panelImgOutputVTransform.setLocation(1250, 430);
+		m_panelImgOutputVTransform.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVTransform);
+		
+		m_panelImgOutputYUVTransform = new IMGPanel();
+		m_panelImgOutputYUVTransform.setLocation(1250, 640);
+		m_panelImgOutputYUVTransform.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVTransform);
+		
+		JLabel IntegerTransform = new JLabel("Integer Transform Image");
+		OutputTransform.add(IntegerTransform);
+		
+		//Column 6
+		m_panelImgOutputYInverse = new IMGPanel();
+		m_panelImgOutputYInverse.setLocation(1560, 10);
+		m_panelImgOutputYInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYInverse);
+		
+		m_panelImgOutputUInverse = new IMGPanel();
+		m_panelImgOutputUInverse.setLocation(1560, 220);
+		m_panelImgOutputUInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputUInverse);
+		
+		m_panelImgOutputVInverse = new IMGPanel();
+		m_panelImgOutputVInverse.setLocation(1560, 430);
+		m_panelImgOutputVInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputVInverse);
+		
+		m_panelImgOutputYUVInverse = new IMGPanel();
+		m_panelImgOutputYUVInverse.setLocation(1560, 640);
+		m_panelImgOutputYUVInverse.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVInverse);
+		
+		JLabel InverseTransform = new JLabel("Inverse Integer Transform Image");
+		OutputInverseTransform.add(InverseTransform);
+
+		int newWidth = ((int) Math.floor(width/4)) * 4;
+		int newHeight = ((int) Math.floor(height/4)) * 4;
+		
+		//Column 1
+		m_imgOutputY = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterY = (WritableRaster) m_imgOutputY.getData();
+		rasterY.setPixels(0, 0, width, height, YUVBFrames.get(FRAME_NUM).get(0));
+		m_imgOutputY.setData(rasterY);
+		m_panelImgOutputY.setBufferedImage(m_imgOutputY);		
+
+		m_imgOutputU = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterU = (WritableRaster) m_imgOutputU.getData();
+		rasterU.setPixels(0, 0, width, height, YUVBFrames.get(FRAME_NUM).get(1));
+		m_imgOutputU.setData(rasterU);
+		m_panelImgOutputU.setBufferedImage(m_imgOutputU);	
+
+		m_imgOutputV = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterV = (WritableRaster) m_imgOutputV.getData();
+		rasterV.setPixels(0, 0, width, height, YUVBFrames.get(FRAME_NUM).get(2));
+		m_imgOutputV.setData(rasterV);
+		m_panelImgOutputV.setBufferedImage(m_imgOutputV);	
+		
+		int[] YUVRes = addRGBChroma(YUVBFrames.get(FRAME_NUM), 0);
+		
+		m_imgOutputYUV = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUV = (WritableRaster) m_imgOutputYUV.getData();
+		rasterYUV.setPixels(0, 0, width, height, YUVRes);
+		m_imgOutputYUV.setData(rasterYUV);
+		m_panelImgOutputYUV.setBufferedImage(m_imgOutputYUV);	
+		
+		//Column 2
+		m_imgOutputYChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYChroma = (WritableRaster) m_imgOutputYChroma.getData();
+		rasterYChroma.setPixels(0, 0, width, height, ChromaBFrames.get(FRAME_NUM).get(0));
+		m_imgOutputYChroma.setData(rasterYChroma);
+		m_panelImgOutputYChroma.setBufferedImage(m_imgOutputYChroma);		
+
+		m_imgOutputUChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUChroma = (WritableRaster) m_imgOutputUChroma.getData();
+		rasterUChroma.setPixels(0, 0, width, height, ChromaBFrames.get(FRAME_NUM).get(1));
+		m_imgOutputUChroma.setData(rasterUChroma);
+		m_panelImgOutputUChroma.setBufferedImage(m_imgOutputUChroma);	
+
+		m_imgOutputVChroma = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVChroma = (WritableRaster) m_imgOutputVChroma.getData();
+		rasterVChroma.setPixels(0, 0, width, height, ChromaBFrames.get(FRAME_NUM).get(2));
+		m_imgOutputVChroma.setData(rasterVChroma);
+		m_panelImgOutputVChroma.setBufferedImage(m_imgOutputVChroma);	
+		
+		int[] YUVChromaRGB = addRGBChroma(ChromaBFrames.get(FRAME_NUM), 0);
+		
+		m_imgOutputYUVChroma = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVChroma = (WritableRaster) m_imgOutputYUVChroma.getData();
+		rasterYUVChroma.setPixels(0, 0, width, height, YUVChromaRGB);
+		m_imgOutputYUVChroma.setData(rasterYUVChroma);
+		m_panelImgOutputYUVChroma.setBufferedImage(m_imgOutputYUVChroma);	
+		
+		//Column 3
+		ArrayList<int[]> YUVPredictionImage = unblocker(PredictedBFrames.get(FRAME_NUM));
+		
+		m_imgOutputYPrediction = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYPrediction = (WritableRaster) m_imgOutputYPrediction.getData();
+		rasterYPrediction.setPixels(0, 0, newWidth, newHeight, YUVPredictionImage.get(0));
+		m_imgOutputYPrediction.setData(rasterYPrediction);
+		m_panelImgOutputYPrediction.setBufferedImage(m_imgOutputYPrediction);	
+		
+		m_imgOutputUPrediction = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUPrediction = (WritableRaster) m_imgOutputUPrediction.getData();
+		rasterUPrediction.setPixels(0, 0, width, height, YUVPredictionImage.get(1));
+		m_imgOutputUPrediction.setData(rasterUPrediction);
+		m_panelImgOutputUPrediction.setBufferedImage(m_imgOutputUPrediction);
+		
+		m_imgOutputVPrediction = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVPrediction = (WritableRaster) m_imgOutputVPrediction.getData();
+		rasterVPrediction.setPixels(0, 0, width, height, YUVPredictionImage.get(2));
+		m_imgOutputVPrediction.setData(rasterVPrediction);
+		m_panelImgOutputVPrediction.setBufferedImage(m_imgOutputVPrediction);
+		
+		int[] YUVPredictionImageRGB = addRGBChroma(YUVPredictionImage, 0);
+		
+		m_imgOutputYUVPrediction = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVPrediction = (WritableRaster) m_imgOutputYUVPrediction.getData();
+		rasterYUVPrediction.setPixels(0, 0, width, height, YUVPredictionImageRGB);
+		m_imgOutputYUVPrediction.setData(rasterYUVPrediction);
+		m_panelImgOutputYUVPrediction.setBufferedImage(m_imgOutputYUVPrediction);	
+		
+		//Column 4
+		ArrayList<int[]> YUVResidualImage = unblocker(ResidualBFrames.get(FRAME_NUM));
+		
+		m_imgOutputYResidual = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYResidual = (WritableRaster) m_imgOutputYResidual.getData();
+		rasterYResidual.setPixels(0, 0, newWidth, newHeight, YUVResidualImage.get(0));
+		m_imgOutputYResidual.setData(rasterYResidual);
+		m_panelImgOutputYResidual.setBufferedImage(m_imgOutputYResidual);	
+		
+		m_imgOutputUResidual = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUResidual = (WritableRaster) m_imgOutputUResidual.getData();
+		rasterUResidual.setPixels(0, 0, newWidth, newHeight, YUVResidualImage.get(1));
+		m_imgOutputUResidual.setData(rasterUResidual);
+		m_panelImgOutputUResidual.setBufferedImage(m_imgOutputUResidual);	
+		
+		m_imgOutputVResidual = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVResidual = (WritableRaster) m_imgOutputVResidual.getData();
+		rasterVResidual.setPixels(0, 0, newWidth, newHeight, YUVResidualImage.get(2));
+		m_imgOutputVResidual.setData(rasterVResidual);
+		m_panelImgOutputVResidual.setBufferedImage(m_imgOutputVResidual);	
+		
+		int[] YUVResidualImageRGB = addRGBChroma(YUVResidualImage, 0);
+		
+		m_imgOutputYUVResidual = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVResidual = (WritableRaster) m_imgOutputYUVResidual.getData();
+		rasterYUVResidual.setPixels(0, 0, width, height, YUVResidualImageRGB);
+		m_imgOutputYUVResidual.setData(rasterYUVResidual);
+		m_panelImgOutputYUVResidual.setBufferedImage(m_imgOutputYUVResidual);
+		
+		//Column 5
+		ArrayList<int[]> YUVTransformImage = unblocker(IntegerTransformBFrames.get(FRAME_NUM));
+
+		m_imgOutputYTransform = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYTransform = (WritableRaster) m_imgOutputYTransform.getData();
+		rasterYTransform.setPixels(0, 0, width, height, YUVTransformImage.get(0));
+		m_imgOutputYTransform.setData(rasterYTransform);
+		m_panelImgOutputYTransform.setBufferedImage(m_imgOutputYTransform);	
+		
+		m_imgOutputUTransform = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUTransform = (WritableRaster) m_imgOutputUTransform.getData();
+		rasterUTransform.setPixels(0, 0, width, height, YUVTransformImage.get(1));
+		m_imgOutputUTransform.setData(rasterUTransform);
+		m_panelImgOutputUTransform.setBufferedImage(m_imgOutputUTransform);	
+		
+		m_imgOutputVTransform = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVTransform = (WritableRaster) m_imgOutputVTransform.getData();
+		rasterVTransform.setPixels(0, 0, width, height, YUVTransformImage.get(2));
+		m_imgOutputVTransform.setData(rasterVTransform);
+		m_panelImgOutputVTransform.setBufferedImage(m_imgOutputVTransform);	
+		
+		//Column 6
+		ArrayList<int[]> YUVInverseImage = unblocker(IntegerInverseTransformBFrames.get(FRAME_NUM));
+
+		m_imgOutputYInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterYInverse = (WritableRaster) m_imgOutputYInverse.getData();
+		rasterYInverse.setPixels(0, 0, width, height, YUVInverseImage.get(0));
+		m_imgOutputYInverse.setData(rasterYInverse);
+		m_panelImgOutputYInverse.setBufferedImage(m_imgOutputYInverse);	
+		
+		m_imgOutputUInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterUInverse = (WritableRaster) m_imgOutputUInverse.getData();
+		rasterUInverse.setPixels(0, 0, width, height, YUVInverseImage.get(1));
+		m_imgOutputUInverse.setData(rasterUInverse);
+		m_panelImgOutputUInverse.setBufferedImage(m_imgOutputUInverse);	
+		
+		m_imgOutputVInverse = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+		WritableRaster rasterVInverse = (WritableRaster) m_imgOutputVInverse.getData();
+		rasterVInverse.setPixels(0, 0, width, height, YUVInverseImage.get(2));
+		m_imgOutputVInverse.setData(rasterVInverse);
+		m_panelImgOutputVInverse.setBufferedImage(m_imgOutputVInverse);	
+		
+		int[] YUVInverseImageRGB = addRGBChroma(YUVInverseImage, 0);
+		
+		m_imgOutputYUVInverse = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVInverse = (WritableRaster) m_imgOutputYUVInverse.getData();
+		rasterYUVInverse.setPixels(0, 0, newWidth, newHeight, YUVInverseImageRGB);
+		m_imgOutputYUVInverse.setData(rasterYUVInverse);
+		m_panelImgOutputYUVInverse.setBufferedImage(m_imgOutputYUVInverse);	
+	}
+	
 	/*
 	 * 
 	 */
