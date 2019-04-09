@@ -139,9 +139,9 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonRefresh.addActionListener(this);
 		buttonGUI.add(buttonRefresh);
 
-		String inputStringQP = JOptionPane.showInputDialog(null, "ENTER QP VALUE");
-        QP = Integer.parseInt(inputStringQP);
-        buttonQP.setText("QP VALUE="+QP);
+//		String inputStringQP = JOptionPane.showInputDialog(null, "ENTER QP VALUE");
+//        QP = Integer.parseInt(inputStringQP);
+//        buttonQP.setText("QP VALUE="+QP);
         
 		String inputStringMaxFrames = JOptionPane.showInputDialog(null, "ENTER NUMBER OF FRAMES TO ENCODE (KEEP NUM = (9*N)+1)");
         MAX_FRAMES = Integer.parseInt(inputStringMaxFrames);
@@ -383,7 +383,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			
 			for(int i=0; i<BlockerPFrames.size(); i++) {
 				
-				ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
+				ArrayList<ArrayList<int[]>> currentFrame = new ArrayList<ArrayList<int[]>>();
 					
 				//Even Pframes
 					if(i % 2 == 0) {
@@ -393,47 +393,141 @@ public class mainWindow extends JFrame implements ActionListener{
 						ArrayList<ArrayList<int[][]>> reblockedIFrame = blocker(unblockedCurrentIFrame, 8);
 						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);
 						
+						ArrayList<int[]> unblockedCurrentPFrame = unblocker(CurrentPFrame);
+						
 						//Do motion estimation here
 						ArrayList<Integer> vector = motionLogSearch(CurrentPFrame, reblockedIFrame);
 						
-						for(int k=0; k<reblockedIFrame.size(); k++) {
-
-							ArrayList<int[][]> Yres = new ArrayList<int[][]>();
-							ArrayList<int[][]> Ures = new ArrayList<int[][]>();
-							ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+						for(int m=0; m<unblockedCurrentPFrame.size(); m++) {
 							
-							for(int l=0; l<reblockedIFrame.get(k).size(); l++) {
-								
-								int PResidual[][] = new int[8][8];
-								
-								for(int m=0; m < 8; m++) {
-									for(int n=0; n < 8; n++) {
-										PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l)[m+vector.get(0)][n+vector.get(1)];
+							ArrayList<int[]> Yres = new ArrayList<int[]>();
+							ArrayList<int[]> Ures = new ArrayList<int[]>();
+							ArrayList<int[]> Vres = new ArrayList<int[]>();
+							
+							int PResidual[] = new int[width*height];
+							
+							for(int k=0; k<width; k++) {
+								for(int l=0; l<height; l++) {
+									//need to fix
+									PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width)+k];
+//									if(((l*width*vector.get(1))+k+vector.get(0)) > (width*height)) {
+//										PResidual[(k*l)+k] = 0;
+//									}
+//									else {
+//										//PResidual[(k*l)+k] = unblockedCurrentPFrame.get(m)[(k*l)+k]-unblockedCurrentIFrame.get(m)[(k*l*vector.get(1))+(k+vector.get(0))];
+//										PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width*vector.get(1))+k+vector.get(0)];
+//									}
+//									
+									
+									if(m == 0) {
+										Yres.add(PResidual);
+									}
+									else if(m == 1) {
+										Ures.add(PResidual);
+									}
+									else {
+										Vres.add(PResidual);
 									}
 								}
-
-								if(k == 0) {
-									Yres.add(PResidual);
-								}
-								else if(k == 1) {
-									Ures.add(PResidual);
-								}
-								else {
-									Vres.add(PResidual);
-								}
-								
 							}
 							
-							if(k == 0) {
+							if(m == 0) {
 								currentFrame.add(Yres);
 							}
-							else if(k == 1) {
+							else if(m == 1) {
 								currentFrame.add(Ures);
 							}
 							else {
 								currentFrame.add(Vres);
 							}
 						}
+						
+						//ArrayList<ArrayList<int[][]>> reblockedPFrame = blocker(currentFrame, 4);
+						
+						for(int y=0; y<currentFrame.size(); y++) {
+								ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(currentFrame.get(y), 4);
+								
+								System.out.println(reblockedPResidual.get(0).get(0));
+								
+								ResidualPFrames.add(reblockedPResidual);
+						}
+						
+						
+
+						
+//						for(int k=0; k<reblockedIFrame.size(); k++) {
+//
+//							ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+//							ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+//							ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+//							
+//							for(int l=0; l<reblockedIFrame.get(k).size(); l++) {
+//								
+////								int PResidual[][] = new int[8][8];			
+//////								
+////								for(int m=0; m<8; m++) {
+////									for(int n=0; n<8; n++) {
+////										PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-unblockedCurrentIFrame.get(k)[];
+////									}
+////								}
+//								
+////								int blockShiftX = vector.get(0) % 8;
+////								int blockShiftY = vector.get(1) % 8;
+////								int shiftedX = vector.get(0)/8;
+////								int shiftedY = vector.get(1)/8;
+////								int blockWidth = width/8;
+////								int blockHeight = height/8;
+//								
+//								
+////								for(int m=0; m<8; m++) {
+////									for(int n=0; n<8; n++) {
+////										if(l+(blockWidth*blockShiftX)+(blockHeight+blockShiftY) > reblockedIFrame.get(k).size()) {
+////											continue;
+////										}
+////										else {
+////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l+(blockWidth*blockShiftX)+(blockHeight+blockShiftY))[(shiftedX)][shiftedY];
+////										}
+////									}
+////								}
+////								for(int m=0; m < 8; m++) {
+////									for(int n=0; n < 8; n++) {
+////										if(m+vector.get(0) > 7 && n+vector.get(1) < 7) {
+////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l+1)[(m+vector.get(0))-8][n+vector.get(1)];
+////										}
+////										else if(m+vector.get(0) > 7 && n+vector.get(1) > 7) {
+////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k+1).get(l+1)[(m+vector.get(0))-8][(n+vector.get(1))-8];
+////										}
+////										else if(m+vector.get(0) < 7 && n+vector.get(1) > 7) {
+////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k+1).get(l)[(m+vector.get(0))][(n+vector.get(1))-8];		
+////										}										
+////										else {
+////											PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l)[m+vector.get(0)][n+vector.get(1)];
+////										}
+////									}
+////								}
+//
+//								if(k == 0) {
+//									Yres.add(PResidual);
+//								}
+//								else if(k == 1) {
+//									Ures.add(PResidual);
+//								}
+//								else {
+//									Vres.add(PResidual);
+//								}
+//								
+//							}
+//							
+//							if(k == 0) {
+//								currentFrame.add(Yres);
+//							}
+//							else if(k == 1) {
+//								currentFrame.add(Ures);
+//							}
+//							else {
+//								currentFrame.add(Vres);
+//							}
+//						}
 	
 					}	
 					// Odd P-frames
@@ -441,29 +535,29 @@ public class mainWindow extends JFrame implements ActionListener{
 						
 					}
 					
-					ResidualPFrames.add(currentFrame);
+					//ResidualPFrames.add(currentFrame);
 			}
 			
 			//Todo: convert 8x8 residual p frame to 4x4 residual p frame
 			
-			ArrayList<ArrayList<int[]>> unblockedPResidual = new ArrayList<ArrayList<int[]>>();
-			
-			for(int x=0; x<ResidualPFrames.size(); x++) {
-				ArrayList<int[]> currentFrame = unblocker(ResidualPFrames.get(x));
-				unblockedPResidual.add(currentFrame);
-			}
-			
-			ResidualPFrames.clear();
-			
-			for(int y=0; y<unblockedPResidual.size(); y++) {
-				for(int z=0; z<unblockedPResidual.get(y).size(); z++) {
-					ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(unblockedPResidual.get(y), 4);
-					
-					System.out.println(reblockedPResidual.get(0).get(0));
-					
-					ResidualPFrames.add(reblockedPResidual);
-				}
-			}
+//			ArrayList<ArrayList<int[]>> unblockedPResidual = new ArrayList<ArrayList<int[]>>();
+//			
+//			for(int x=0; x<ResidualPFrames.size(); x++) {
+//				ArrayList<int[]> currentFrame = unblocker(ResidualPFrames.get(x));
+//				unblockedPResidual.add(currentFrame);
+//			}
+//			
+//			ResidualPFrames.clear();
+//			
+//			for(int y=0; y<unblockedPResidual.size(); y++) {
+//				for(int z=0; z<unblockedPResidual.get(y).size(); z++) {
+//					ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(unblockedPResidual.get(y), 4);
+//					
+//					System.out.println(reblockedPResidual.get(0).get(0));
+//					
+//					ResidualPFrames.add(reblockedPResidual);
+//				}
+//			}
 
 			PFrameTransform();
 			testP();
@@ -663,7 +757,6 @@ public class mainWindow extends JFrame implements ActionListener{
 
 				//Creates a buffered image from the video frame
 				BufferedImage currentFrame = new Java2DFrameConverter().convert(rawVideo.grabImage());
-
 				//Place the current frame into an array list
 				videoFrames.add(currentFrame);	
 
@@ -673,6 +766,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 
 	/*
