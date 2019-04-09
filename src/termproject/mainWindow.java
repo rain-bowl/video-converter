@@ -1822,6 +1822,8 @@ public class mainWindow extends JFrame implements ActionListener{
 						//m_imgOutputPredictedIFrame, m_imgOutputIntegerTransformIFrame;
 		
 		totalGUI.removeAll(); 
+		totalGUI.revalidate();
+		totalGUI.repaint();
 		totalGUI.add(buttonGUI);
 		
 		//Set Panels
