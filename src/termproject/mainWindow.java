@@ -204,25 +204,29 @@ public class mainWindow extends JFrame implements ActionListener{
 	        QP = Integer.parseInt(inputStringQP);
 	        
 	        buttonQP.setText("QP I-VALUE="+QP);
+	        buttonQPP.setText("QP P-VALUE="+QP);
 	        
 	        IntegerTransformIFrames.clear();
 	        IntegerInverseTransformIFrames.clear();
 	        IFrameTransform();
 	        test();
 	        totalGUI.revalidate();
+	        totalGUI.repaint();
 	        
 		}
 		else if(evnt.getSource() == buttonQPP) {
 	        String inputStringQP = JOptionPane.showInputDialog(null, "ENTER NEW QP PFRAME VALUE");
 	        QP = Integer.parseInt(inputStringQP);
 	        
-	        buttonQP.setText("QP P-VALUE="+QP);
+	        buttonQP.setText("QP I-VALUE="+QP);
+	        buttonQPP.setText("QP P-VALUE="+QP);
 	        
 	        IntegerTransformPFrames.clear();
 	        IntegerInverseTransformPFrames.clear();
-	        //PFrameTransform();
+	        PFrameTransform();
 	        testP();
 	        totalGUI.revalidate();
+	        totalGUI.repaint();
 	        
 		}
 		else if(evnt.getSource() == buttonCurrentIFrame) {
@@ -232,6 +236,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	        buttonCurrentIFrame.setText("I-FRAME SELECTED = "+FRAME_NUM);
 	        test();
 			totalGUI.revalidate();
+			totalGUI.repaint();
 	        
 		}
 		else if(evnt.getSource() == buttonCurrentPFrame) {
@@ -241,7 +246,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	        buttonCurrentIFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
 	        testP();
 			totalGUI.revalidate();
-	        
+			totalGUI.repaint();
 		}
 		else if(evnt.getSource() == buttonIFrame) {
 			
