@@ -1100,7 +1100,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		ArrayList<int[][]> Yblocks = currentFrame.get(0);
 		int numBlocks = Yblocks.size(); // get number of Y blocks
 		int rowSize = (int) Math.sqrt(numBlocks);
-		int p = (int) Math.sqrt(numBlocks);		
+		int p = (int) Math.ceil(Math.sqrt(numBlocks)/2);		
 		int offset = (int) Math.ceil(p/2);
 		ArrayList<int[][]> nineBlocks = new ArrayList<int[][]>();
 		ArrayList<int[][]> refBlocks = new ArrayList<int[][]>();
@@ -1113,8 +1113,6 @@ public class mainWindow extends JFrame implements ActionListener{
 		double minMAD = 666;
 		int minIndex = 0;
 		int lastPosition = centerCoord;
-
-		while (last != true) {
 			int tl = (int)centerCoord/2 - offset;
 			int tm = (int)centerCoord/2;
 			int tr = (int)centerCoord/2 + offset;
@@ -1124,10 +1122,21 @@ public class mainWindow extends JFrame implements ActionListener{
 			int bl = (int)centerCoord/2 + centerCoord - offset;
 			int bm = (int)centerCoord/2 + centerCoord;
 			int br = (int)centerCoord/2 + centerCoord + offset;
+		
+		while (last != true) {
+			tl = centerCoord - offset * rowSize - offset;
+			tm = centerCoord - offset * rowSize;
+			tr = centerCoord - offset * rowSize + offset;
+			l  = centerCoord - offset;
+			m  = centerCoord;
+			r  = centerCoord + offset;
+			bl = centerCoord + offset * rowSize - offset;
+			bm = centerCoord + offset * rowSize;
+			br = centerCoord + offset * rowSize + offset;
 			
 			int[] positions = new int [] {tl, tm, tr, l, m, r, bl, bm, br};
-			System.out.println("tl, tm, tr, l, m, r, bl, bm, br: " 
-								+ tl + " " + tm + " " + tr + " " + l + " " + m + " " + r + " " + bl + " " + bm + " " + br);
+			System.out.println("offset: tl, tm, tr, l, m, r, bl, bm, br: " 
+								+ offset + " " + tl + " " + tm + " " + tr + " " + l + " " + m + " " + r + " " + bl + " " + bm + " " + br);
 			nineBlocks.add(0, Yblocks.get(tl));
 			nineBlocks.add(1, Yblocks.get(tm));							// 1/4 spot
 			nineBlocks.add(2, Yblocks.get(tr));
@@ -1160,7 +1169,7 @@ public class mainWindow extends JFrame implements ActionListener{
 				last = true;
 				lastPosition = positions[minIndex];
 			}
-			
+			System.out.println("centerCoord: " + centerCoord);
 			centerCoord = positions[minIndex];
 			offset = (int) Math.ceil(offset/2);
 			
