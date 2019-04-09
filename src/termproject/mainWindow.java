@@ -90,7 +90,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonGUI.setSize(1920, 60);
 		totalGUI.add(buttonGUI);
 
-		buttonOpen = new JButton("OPEN FILE");
+		buttonOpen = new JButton("1. OPEN FILE");
 		buttonOpen.setLocation(0, 0);
 		buttonOpen.setSize(150, 40);
 		buttonOpen.addActionListener(this);
@@ -102,7 +102,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonQP.addActionListener(this);
 		buttonGUI.add(buttonQP);
 		
-		buttonIFrame = new JButton("ANALYZE IFRAME");
+		buttonIFrame = new JButton("2. ANALYZE IFRAME");
 		buttonIFrame.setLocation(320, 0);
 		buttonIFrame.setSize(150, 40);
 		buttonIFrame.addActionListener(this);
@@ -120,7 +120,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		buttonQPP.addActionListener(this);
 		buttonGUI.add(buttonQPP);
 		
-		buttonPFrame = new JButton("ANALYZE PFRAME");
+		buttonPFrame = new JButton("3. ANALYZE PFRAME");
 		buttonPFrame.setLocation(830, 0);
 		buttonPFrame.setSize(150, 40);
 		buttonPFrame.addActionListener(this);
