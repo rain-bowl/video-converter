@@ -227,6 +227,7 @@ public class mainWindow extends JFrame implements ActionListener{
 		IntegerInverseTransformIFrames.clear();
 		IntegerInverseTransformPFrames.clear();
 		IntegerInverseTransformBFrames.clear();
+		
 	}
 
 	public void actionPerformed(ActionEvent evnt) {
@@ -466,6 +467,13 @@ public class mainWindow extends JFrame implements ActionListener{
 		}
 		else if(evnt.getSource() == buttonPFrame) {
 
+			YUVPFrames.clear();
+			ChromaPFrames.clear();
+			BlockerPFrames.clear();
+			ResidualPFrames.clear();
+			IntegerTransformPFrames.clear();
+			IntegerInverseTransformPFrames.clear();
+			
 			convertYUV(1);
 			subSampling(YUVPFrames, 1);
 
@@ -626,6 +634,15 @@ public class mainWindow extends JFrame implements ActionListener{
 			totalGUI.repaint();
 		}
 		else if(evnt.getSource() == buttonBFrame) {
+			
+			YUVBFrames.clear();
+			ChromaBFrames.clear();
+			BlockerBFrames.clear();
+			PredictedBFrames.clear();
+			ResidualBFrames.clear();
+			IntegerTransformBFrames.clear();
+			IntegerInverseTransformBFrames.clear();
+			
 			convertYUV(2);
 			subSampling(YUVBFrames, 2);
 
@@ -938,7 +955,7 @@ public class mainWindow extends JFrame implements ActionListener{
 
 
 			//Perform integer transform and inverse integer transform on BFrame
-			PFrameTransform();
+			BFrameTransform();
 			
 			testB();
 
