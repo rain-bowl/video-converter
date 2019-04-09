@@ -3103,19 +3103,24 @@ public class mainWindow extends JFrame implements ActionListener{
 		m_panelImgOutputYUVInverse.setBufferedImage(m_imgOutputYUVInverse);	
 	}
 
-	public void finalFrames() {
+public void finalFrames() {
 
-		JPanel OutputImg, OutputIFrame, OutputPFrame, OutputPFrame2, OutputPFrame3;
+		JPanel OutputImg, OutputIFrame, OutputPFrame, OutputPFrame2, 
+               OutputBFrame, OutputBFrame2, OutputBFrame3;
 
 		IMGPanel m_panelImgOutputYUVOriginalI, m_panelImgOutputYUVIFrame, 
-				 m_panelImgOutputYUVOriginalP, m_panelImgOutputYUVPFrame, 
+				 m_panelImgOutputYUVOriginalB, m_panelImgOutputYUVPFrame, 
 				 m_panelImgOutputYUVOriginalP2, m_panelImgOutputYUVPFrame2,
-				 m_panelImgOutputYUVOriginalP3, m_panelImgOutputYUVPFrame3;
+				 m_panelImgOutputYUVOriginalB, m_panelImgOutputYUVPBrame, 
+				 m_panelImgOutputYUVOriginalB2, m_panelImgOutputYUVBFrame2,
 
 		BufferedImage m_imgOutputYUVOriginalI, m_imgOutputYUVIFrame, 
 					  m_imgOutputYUVP, m_imgOutputYUVPFrame, 
 					  m_imgOutputYUVP2, m_imgOutputYUVPFrame2, 
-					  m_imgOutputYUVP3, m_imgOutputYUVPFrame3;
+                      m_imgOutputYUVB, m_imgOutputYUVBFrame, 
+					  m_imgOutputYUVB2, m_imgOutputYUVBFrame2, 
+                      m_imgOutputYUVB3, m_imgOutputYUVBFrame3;
+					  
 
 		totalGUI.removeAll(); 
 		totalGUI.add(buttonGUI);
@@ -3132,20 +3137,31 @@ public class mainWindow extends JFrame implements ActionListener{
 		OutputIFrame.setSize(310, 80);
 		totalGUI.add(OutputIFrame);
 		
+		// OutputPFrame2 = new JPanel();
+		// OutputPFrame2.setLocation(640, 930);
+		// OutputPFrame2.setSize(310, 80);
+		// totalGUI.add(OutputPFrame2);
+		
+		OutputBFrame = new JPanel();
+		OutputBFrame.setLocation(320, 930);
+		OutputBFrame.setSize(310, 80);
+		totalGUI.add(OutputBFrame);
+
+		OutputBFrame2 = new JPanel();
+		OutputBFrame2.setLocation(630, 930);
+		OutputBFrame2.setSize(310, 80);
+		totalGUI.add(OutputBFrame2);
+		
 		OutputPFrame = new JPanel();
-		OutputPFrame.setLocation(320, 930);
+		OutputPFrame.setLocation(940, 930);
 		OutputPFrame.setSize(310, 80);
 		totalGUI.add(OutputPFrame);
 
-		OutputPFrame2 = new JPanel();
-		OutputPFrame2.setLocation(640, 930);
-		OutputPFrame2.setSize(310, 80);
-		totalGUI.add(OutputPFrame2);
-		
-		OutputPFrame3 = new JPanel();
-		OutputPFrame3.setLocation(640, 930);
-		OutputPFrame3.setSize(310, 80);
-		totalGUI.add(OutputPFrame3);
+		// OutputBFrame3 = new JPanel();
+		// OutputBFrame3.setLocation(960, 930);
+		// OutputBFrame3.setSize(310, 80);
+		// totalGUI.add(OutputBFrame3);
+
 
 		m_panelImgOutputYUVOriginalI = new IMGPanel();
 		m_panelImgOutputYUVOriginalI.setLocation(10, 430);
@@ -3157,35 +3173,55 @@ public class mainWindow extends JFrame implements ActionListener{
 		m_panelImgOutputYUVIFrame.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputYUVIFrame);
 		
+		m_panelImgOutputYUVOriginalB = new IMGPanel();
+		m_panelImgOutputYUVOriginalB.setLocation(320, 430);
+		m_panelImgOutputYUVOriginalB.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVOriginalB);
+
+		m_panelImgOutputYUVBFrame = new IMGPanel();
+		m_panelImgOutputYUVBFrame.setLocation(320, 640);
+		m_panelImgOutputYUVBFrame.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVBFrame);
+
+        m_panelImgOutputYUVOriginalB2 = new IMGPanel();
+		m_panelImgOutputYUVOriginalB2.setLocation(630, 430);
+		m_panelImgOutputYUVOriginalB2.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVOriginalB2);
+
+		m_panelImgOutputYUVBFrame2 = new IMGPanel();
+		m_panelImgOutputYUVBFrame2.setLocation(630, 640);
+		m_panelImgOutputYUVBFrame2.setSize(300, 200);
+		OutputImg.add(m_panelImgOutputYUVBFrame2);
+
 		m_panelImgOutputYUVOriginalP = new IMGPanel();
-		m_panelImgOutputYUVOriginalP.setLocation(320, 430);
+		m_panelImgOutputYUVOriginalP.setLocation(940, 430);
 		m_panelImgOutputYUVOriginalP.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputYUVOriginalP);
 
 		m_panelImgOutputYUVPFrame = new IMGPanel();
-		m_panelImgOutputYUVPFrame.setLocation(320, 640);
+		m_panelImgOutputYUVPFrame.setLocation(940, 640);
 		m_panelImgOutputYUVPFrame.setSize(300, 200);
 		OutputImg.add(m_panelImgOutputYUVPFrame);
-		
-		m_panelImgOutputYUVOriginalP2 = new IMGPanel();
-		m_panelImgOutputYUVOriginalP2.setLocation(630, 430);
-		m_panelImgOutputYUVOriginalP2.setSize(300, 200);
-		OutputImg.add(m_panelImgOutputYUVOriginalP2);
 
-		m_panelImgOutputYUVPFrame2 = new IMGPanel();
-		m_panelImgOutputYUVPFrame2.setLocation(630, 640);
-		m_panelImgOutputYUVPFrame2.setSize(300, 200);
-		OutputImg.add(m_panelImgOutputYUVPFrame2);
-		
-		m_panelImgOutputYUVOriginalP3 = new IMGPanel();
-		m_panelImgOutputYUVOriginalP3.setLocation(940, 430);
-		m_panelImgOutputYUVOriginalP3.setSize(300, 200);
-		OutputImg.add(m_panelImgOutputYUVOriginalP3);
+        // m_panelImgOutputYUVOriginalP2 = new IMGPanel();
+		// m_panelImgOutputYUVOriginalP2.setLocation(320, 430);
+		// m_panelImgOutputYUVOriginalP2.setSize(300, 200);
+		// OutputImg.add(m_panelImgOutputYUVOriginalP2);
 
-		m_panelImgOutputYUVPFrame3 = new IMGPanel();
-		m_panelImgOutputYUVPFrame3.setLocation(940, 640);
-		m_panelImgOutputYUVPFrame3.setSize(300, 200);
-		OutputImg.add(m_panelImgOutputYUVPFrame3);
+		// m_panelImgOutputYUVPFrame2 = new IMGPanel();
+		// m_panelImgOutputYUVPFrame2.setLocation(320, 640);
+		// m_panelImgOutputYUVPFrame2.setSize(300, 200);
+		// OutputImg.add(m_panelImgOutputYUVPFrame2);
+				
+		// m_panelImgOutputYUVOriginalB3 = new IMGPanel();
+		// m_panelImgOutputYUVOriginalB3.setLocation(940, 430);
+		// m_panelImgOutputYUVOriginalB3.setSize(300, 200);
+		// OutputImg.add(m_panelImgOutputYUVOriginalB3);
+
+		// m_panelImgOutputYUVBFrame3 = new IMGPanel();
+		// m_panelImgOutputYUVBFrame3.setLocation(940, 640);
+		// m_panelImgOutputYUVBFrame3.setSize(300, 200);
+		// OutputImg.add(m_panelImgOutputYUVBFrame3);
 		
 		int[] YUVIRes = addRGBChroma(YUVIFrames.get(FRAME_NUM), 0);
 
@@ -3207,14 +3243,41 @@ public class mainWindow extends JFrame implements ActionListener{
 		JLabel iFrame = new JLabel("I-Frame");
 		OutputIFrame.add(iFrame);
 		
+
+
+		ArrayList<int[]> YUVBResidualImage = unblocker(ResidualBFrames.get(FRAME_NUM));
+		int[] YUVBResidualImageRGB = addRGBChroma(YUVBResidualImage, 0);
+
+		m_imgOutputYUVBFrame = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterYUVB = (WritableRaster) m_imgOutputYUVBFrame.getData();
+		rasterYUVB.setPixels(0, 0, width, height, YUVBResidualImageRGB);
+		m_imgOutputYUVBFrame.setData(rasterYUVB);
+		m_panelImgOutputYUVBFrame.setBufferedImage(m_imgOutputYUVBFrame);
+
+		JLabel bFrame = new JLabel("B-Frame");
+		OutputBFrame.add(bFrame);
 		
+
+        ArrayList<int[]> YUVBResidualImage2 = unblocker(ResidualBFrames.get(FRAME_NUM + 1));
+		int[] YUVBResidualImageRGB2 = addRGBChroma(YUVBResidualImage2, 0);
+
+		m_imgOutputYUVB2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		WritableRaster rasterBYUV2 = (WritableRaster) m_imgOutputYUVB2.getData();
+		rasterBYUV2.setPixels(0, 0, width, height, YUVBRes2);
+		m_imgOutputYUVB2.setData(rasterBYUV2);
+		m_panelImgOutputYUVOriginalB2.setBufferedImage(YUVBResidualImageRGB2);
+
+		JLabel bFrame2 = new JLabel("B-Frame 2");
+		OutputBFrame2.add(bFrame2);
+
+
 		int[] YUVPRes = addRGBChroma(YUVPFrames.get(FRAME_NUM), 0);
 
 		m_imgOutputYUVP = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		WritableRaster rasterPYUV = (WritableRaster) m_imgOutputYUVP.getData();
 		rasterPYUV.setPixels(0, 0, width, height, YUVPRes);
 		m_imgOutputYUVP.setData(rasterPYUV);
-		m_panelImgOutputYUVOriginalP.setBufferedImage(m_imgOutputYUVP);
+		m_panelImgOutputYUVOriginalB.setBufferedImage(m_imgOutputYUVP);
 
 		ArrayList<int[]> YUVPResidualImage = unblocker(ResidualPFrames.get(FRAME_NUM));
 		int[] YUVPResidualImageRGB = addRGBChroma(YUVPResidualImage, 0);
@@ -3228,25 +3291,25 @@ public class mainWindow extends JFrame implements ActionListener{
 		JLabel pFrame = new JLabel("P-Frame");
 		OutputPFrame.add(pFrame);
 		
-		int[] YUVPRes2 = addRGBChroma(YUVPFrames.get(FRAME_NUM + 1), 0);
+		// int[] YUVPRes2 = addRGBChroma(YUVPFrames.get(FRAME_NUM + 1), 0);
 
-		m_imgOutputYUVP2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		WritableRaster rasterPYUV2 = (WritableRaster) m_imgOutputYUVP2.getData();
-		rasterPYUV2.setPixels(0, 0, width, height, YUVPRes2);
-		m_imgOutputYUVP2.setData(rasterPYUV2);
-		m_panelImgOutputYUVOriginalP2.setBufferedImage(m_imgOutputYUVP2);
+		// m_imgOutputYUVP2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		// WritableRaster rasterPYUV2 = (WritableRaster) m_imgOutputYUVP2.getData();
+		// rasterPYUV2.setPixels(0, 0, width, height, YUVPRes2);
+		// m_imgOutputYUVP2.setData(rasterPYUV2);
+		// m_panelImgOutputYUVOriginalB2.setBufferedImage(m_imgOutputYUVP2);
 
-		ArrayList<int[]> YUVPResidualImage2 = unblocker(ResidualPFrames.get(FRAME_NUM + 1));
-		int[] YUVPResidualImageRGB2 = addRGBChroma(YUVPResidualImage2, 0);
+		// ArrayList<int[]> YUVPResidualImage2 = unblocker(ResidualPFrames.get(FRAME_NUM + 1));
+		// int[] YUVPResidualImageRGB2 = addRGBChroma(YUVPResidualImage2, 0);
 
-		m_imgOutputYUVPFrame2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		WritableRaster rasterYUVP2 = (WritableRaster) m_imgOutputYUVPFrame2.getData();
-		rasterYUVP2.setPixels(0, 0, width, height, YUVPResidualImageRGB2);
-		m_imgOutputYUVPFrame2.setData(rasterYUVP);
-		m_panelImgOutputYUVPFrame2.setBufferedImage(m_imgOutputYUVPFrame2);
+		// m_imgOutputYUVPFrame2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		// WritableRaster rasterYUVP2 = (WritableRaster) m_imgOutputYUVPFrame2.getData();
+		// rasterYUVP2.setPixels(0, 0, width, height, YUVPResidualImageRGB2);
+		// m_imgOutputYUVPFrame2.setData(rasterYUVP);
+		// m_panelImgOutputYUVPFrame2.setBufferedImage(m_imgOutputYUVPFrame2);
 
-		JLabel pFrame2 = new JLabel("P-Frame 2");
-		OutputPFrame2.add(pFrame2);
+		// JLabel pFrame2 = new JLabel("P-Frame 2");
+		// OutputPFrame2.add(pFrame2);
 
 //		int[] YUVPRes3 = addRGBChroma(YUVPFrames.get(FRAME_NUM + 2), 0);
 //
@@ -3254,7 +3317,7 @@ public class mainWindow extends JFrame implements ActionListener{
 //		WritableRaster rasterPYUV3 = (WritableRaster) m_imgOutputYUVP3.getData();
 //		rasterPYUV3.setPixels(0, 0, width, height, YUVPRes3);
 //		m_imgOutputYUVP3.setData(rasterPYUV3);
-//		m_panelImgOutputYUVOriginalP3.setBufferedImage(m_imgOutputYUVP3);
+//		m_panelImgOutputYUVOriginalB3.setBufferedImage(m_imgOutputYUVP3);
 //
 //		ArrayList<int[]> YUVPResidualImage3 = unblocker(ResidualPFrames.get(FRAME_NUM + 2));
 //		int[] YUVPResidualImageRGB3 = addRGBChroma(YUVPResidualImage3, 0);
