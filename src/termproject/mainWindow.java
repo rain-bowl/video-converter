@@ -243,7 +243,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	        String inputStringFrameNum = JOptionPane.showInputDialog(null, "ENTER P-FRAME NUMBER BETWEEN 0 - "+(videoPFrames.size()-1));
 	        FRAME_NUM = Integer.parseInt(inputStringFrameNum);
 	        
-	        buttonCurrentIFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
+	        buttonCurrentPFrame.setText("P-FRAME SELECTED = "+FRAME_NUM);
 	        testP();
 			totalGUI.revalidate();
 			totalGUI.repaint();
@@ -388,8 +388,9 @@ public class mainWindow extends JFrame implements ActionListener{
 			
 			for(int i=0; i<BlockerPFrames.size(); i++) {
 				
-				ArrayList<ArrayList<int[]>> currentFrame = new ArrayList<ArrayList<int[]>>();
-					
+				ArrayList<int[]> currentFrame = new ArrayList<int[]>();
+				currentFrame.clear();
+				
 				//Even Pframes
 					if(i % 2 == 0) {
 						
@@ -405,9 +406,9 @@ public class mainWindow extends JFrame implements ActionListener{
 						
 						for(int m=0; m<unblockedCurrentPFrame.size(); m++) {
 							
-							ArrayList<int[]> Yres = new ArrayList<int[]>();
-							ArrayList<int[]> Ures = new ArrayList<int[]>();
-							ArrayList<int[]> Vres = new ArrayList<int[]>();
+							int[] Yres = new int[width*height];
+							int[] Ures = new int[width*height];
+							int[] Vres = new int[width*height];
 							
 							int PResidual[] = new int[width*height];
 							int PNewPos[] = new int[width*height];
@@ -431,13 +432,13 @@ public class mainWindow extends JFrame implements ActionListener{
 									PResidual[(n*width)+o] = unblockedCurrentIFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
 
 									if(m == 0) {
-										Yres.add(PResidual);
+										Yres = PResidual;
 									}
 									else if(m == 1) {
-										Ures.add(PResidual);
+										Ures = PResidual;
 									}
 									else {
-										Vres.add(PResidual);
+										Vres = PResidual;
 									}
 								}
 							}
@@ -453,26 +454,87 @@ public class mainWindow extends JFrame implements ActionListener{
 							}
 						}
 						
-						//reblock the pframe so that its in 4x4 blocks for the integer transform
-						for(int y=0; y<currentFrame.size(); y++) {
-								ArrayList<ArrayList<int[][]>> reblockedPResidual = blocker(currentFrame.get(y), 4);
-								
-								System.out.println(reblockedPResidual.get(0).get(0));
-								
-								ResidualPFrames.add(reblockedPResidual);
-						}
-					}
+						//ArrayList<ArrayList<ArrayList<int[][]>>>
+//						ArrayList<ArrayList<int[][]>> reblockedPResidual = new ArrayList<ArrayList<int[][]>>();
+//						
+//						//reblock the pframe so that its in 4x4 blocks for the integer transform
+						ArrayList<ArrayList<int[][]>> reblockedPResidualYUV = blocker(currentFrame, 4);
+						ResidualPFrames.add(reblockedPResidualYUV);
+						PFrameTransform();
+						
+				}
 					// Odd P-frames
 					else{
+						ArrayList<int[]> unblockedPreviousPFrame = unblocker(IntegerInverseTransformPFrames.get(i-1));
+						
+						ArrayList<ArrayList<int[][]>> reblockedPFrame = blocker(unblockedPreviousPFrame, 8);
+						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);
+						
+						ArrayList<int[]> unblockedCurrentPFrame = unblocker(CurrentPFrame);
+						
+						//Do motion estimation here
+						ArrayList<Integer> vector = motionLogSearch(CurrentPFrame, reblockedPFrame);
+						
+						for(int m=0; m<unblockedCurrentPFrame.size(); m++) {
+							
+							int[] Yres = new int[width*height];
+							int[] Ures = new int[width*height];
+							int[] Vres = new int[width*height];
+							
+							int PResidual[] = new int[width*height];
+							int PNewPos[] = new int[width*height];
+							
+							//Moves current pframe to the new location with the offset motion vector
+							for(int k=0; k<width; k++) {
+								for(int l=0; l<height; l++) {
+									
+									if((l*(width+vector.get(1))+k+vector.get(1)) >= (width*height)) {
+										PNewPos[(l*width)+k] = 0;
+									}
+									else {
+										PNewPos[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*(width+vector.get(1))+k+vector.get(1))];
+									}
+								}
+							}
+							
+							//Take the difference between the current iframe and the motion compensated pframe 
+							for(int o=0; o<width; o++) {
+								for(int n=0; n<height; n++) {
+									PResidual[(n*width)+o] = unblockedPreviousPFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
+
+									if(m == 0) {
+										Yres = PResidual;
+									}
+									else if(m == 1) {
+										Ures = PResidual;
+									}
+									else {
+										Vres = PResidual;
+									}
+								}
+							}
+							
+							if(m == 0) {
+								currentFrame.add(Yres);
+							}
+							else if(m == 1) {
+								currentFrame.add(Ures);
+							}
+							else {
+								currentFrame.add(Vres);
+							}
+						}
+						
+						ArrayList<ArrayList<int[][]>> reblockedPResidualYUV = blocker(currentFrame, 4);
+						ResidualPFrames.add(reblockedPResidualYUV);
+						PFrameTransform();
 						
 					}
-					
-					//ResidualPFrames.add(currentFrame);
 			}
-			
-			PFrameTransform();
+
 			testP();
-			
+			totalGUI.revalidate();
+			totalGUI.repaint();
 		}
     	else if (evnt.getSource() == buttonRefresh) {
     	    totalGUI.revalidate();
@@ -569,6 +631,9 @@ public class mainWindow extends JFrame implements ActionListener{
 	}
 	
 	public void PFrameTransform() {
+		IntegerTransformPFrames.clear();
+		IntegerInverseTransformPFrames.clear();
+		
 		for(int i=0; i < ResidualPFrames.size(); i++) {
 			ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 
