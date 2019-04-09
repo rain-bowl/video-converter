@@ -410,19 +410,49 @@ public class mainWindow extends JFrame implements ActionListener{
 							ArrayList<int[]> Vres = new ArrayList<int[]>();
 							
 							int PResidual[] = new int[width*height];
+							int PNewPos[] = new int[width*height];
 							
 							for(int k=0; k<width; k++) {
 								for(int l=0; l<height; l++) {
+									
+									if((l*(width+vector.get(1))+k+vector.get(1)) >= (width*height)) {
+										PNewPos[(l*width)+k] = 0;
+									}
+									else {
+										PNewPos[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*(width+vector.get(1))+k+vector.get(1))];
+									}
+								}
+							}
+							
+							
+							for(int o=0; o<width; o++) {
+								for(int n=0; n<height; n++) {
+									PResidual[(n*width)+o] = unblockedCurrentIFrame.get(m)[(n*width)+o]-unblockedCurrentPFrame.get(m)[(n*width)+o];
+
+//							for(int k=0; k<width; k++) {
+//								for(int l=0; l<height; l++) {
+//									
+//									if((l*(width+vector.get(1))+k+vector.get(1)) >= (width*height)) {
+//										PNewPos[(k*width)+k] = 0;
+//									}
+//									else {
+//										PNewPos[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*(width+vector.get(1))+k+vector.get(1))];
+//									}
+									
+									
+									
 									//need to fix
-									PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width)+k];
-//									if(((l*width*vector.get(1))+k+vector.get(0)) > (width*height)) {
+////									PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width)+k];
+//									if(((l*(width+vector.get(1)))+k+vector.get(0)) >= (width*height)) {
 //										PResidual[(k*l)+k] = 0;
 //									}
 //									else {
 //										//PResidual[(k*l)+k] = unblockedCurrentPFrame.get(m)[(k*l)+k]-unblockedCurrentIFrame.get(m)[(k*l*vector.get(1))+(k+vector.get(0))];
-//										PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*width*vector.get(1))+k+vector.get(0)];
+//										PResidual[(l*width)+k] = unblockedCurrentPFrame.get(m)[(l*width)+k]-unblockedCurrentIFrame.get(m)[(l*(width+vector.get(1)))+k+vector.get(0)];
 //									}
 //									
+									
+									
 									
 									if(m == 0) {
 										Yres.add(PResidual);
