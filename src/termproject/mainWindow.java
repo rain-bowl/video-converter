@@ -55,6 +55,7 @@ public class mainWindow extends JFrame implements ActionListener{
 	
 	//Arraylist of all I frames containing the intra-predicted frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> ResidualIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
+	ArrayList<ArrayList<ArrayList<int[][]>>> ResidualPFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
 
 	//Arraylist of all I frames containing the integer transformed frames
 	ArrayList<ArrayList<ArrayList<int[][]>>> IntegerTransformIFrames = new ArrayList<ArrayList<ArrayList<int[][]>>>();
@@ -329,29 +330,76 @@ public class mainWindow extends JFrame implements ActionListener{
 		else if(evnt.getSource() == buttonPFrame) {
 			
 			convertYUV(1);
-			subSampling(YUVPFrames, 0);
+			subSampling(YUVPFrames, 1);
 			
-			//Every even Pframe corresponds to an I frame. Every odd P frame corresponds to the previous P frame
-			int PFrameSize = YUVPFrames.size();
+			// Creates 4x4 MB for all frames
+			for(int j=0; j < ChromaPFrames.size()/2; j++) {
+				BlockerPFrames.add(blocker(ChromaPFrames.get(j), 8));
+			}
 			
-			for(int i=0; i<PFrameSize; i++) {
-				//Even Pframes
-				if(i % 2 == 0) {
-					ArrayList<ArrayList<int[][]>> CurrentIFrame = IntegerInverseTransformIFrames.get(i/2);
-					ArrayList<int[]> CurrentPFrame = ChromaPFrames.get(i/2);
+			for(int i=0; i<BlockerPFrames.size(); i++) {
+				
+				ArrayList<ArrayList<int[][]>> currentFrame = new ArrayList<ArrayList<int[][]>>();
 					
-					// Creates 4x4 MB for all frames
-					for(int j=0; j < ChromaPFrames.size(); i++) {
-						BlockerPFrames.add(blocker(ChromaPFrames.get(i), 8));
+				//Even Pframes
+					if(i % 2 == 0) {
+						
+						ArrayList<int[]> unblockedCurrentIFrame = unblocker(IntegerInverseTransformIFrames.get(i/2));
+						
+						ArrayList<ArrayList<int[][]>> reblockedIFrame = blocker(unblockedCurrentIFrame, 8);
+						ArrayList<ArrayList<int[][]>> CurrentPFrame = BlockerPFrames.get(i);
+						
+						//Do motion estimation here
+						ArrayList<Integer> vector = motionLogSearch(CurrentPFrame, reblockedIFrame);
+						
+						for(int k=0; k<reblockedIFrame.size(); k++) {
+
+							ArrayList<int[][]> Yres = new ArrayList<int[][]>();
+							ArrayList<int[][]> Ures = new ArrayList<int[][]>();
+							ArrayList<int[][]> Vres = new ArrayList<int[][]>();
+							
+							for(int l=0; l<reblockedIFrame.get(k).size(); l++) {
+								
+								int PResidual[][] = new int[8][8];
+								
+								for(int m=0; m < 8; m++) {
+									for(int n=0; n < 8; n++) {
+										PResidual[l][m] = CurrentPFrame.get(k).get(l)[m][n]-reblockedIFrame.get(k).get(l)[m+vector.get(0)][n+vector.get(1)];
+									}
+								}
+
+								if(k == 0) {
+									Yres.add(PResidual);
+								}
+								else if(k == 1) {
+									Ures.add(PResidual);
+								}
+								else {
+									Vres.add(PResidual);
+								}
+								
+							}
+							
+							if(k == 0) {
+								currentFrame.add(Yres);
+							}
+							else if(k == 1) {
+								currentFrame.add(Ures);
+							}
+							else {
+								currentFrame.add(Vres);
+							}
+						}
+	
+					}	
+					else{
+						
 					}
 					
-					//Do motion estimation here
-
-				}	
-				else{
-					
-				}
+					ResidualPFrames.add(currentFrame);
 			}
+			
+			
 		}
     	else if (evnt.getSource() == buttonRefresh) {
     	    totalGUI.revalidate();
@@ -896,7 +944,7 @@ public class mainWindow extends JFrame implements ActionListener{
 			}
 		}
 		
-		MAD = difference / blockSize;
+		MAD = Math.abs(difference) / blockSize;
 		
 		return MAD;
 	}
