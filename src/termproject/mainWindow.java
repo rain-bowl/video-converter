@@ -687,6 +687,13 @@ public class mainWindow extends JFrame implements ActionListener{
 						int[] Vres = new int[width*height];
 
 						int BResidual[] = new int[width*height];
+						int BResidual1[] = new int[width*height];
+						int BResidual2[] = new int[width*height];
+						int BResidual3[] = new int[width*height];
+						
+						int sumB1 = 0;
+						int sumB2 = 0;
+						int sumB3 = 0;
 						
 						int PastIFrameNewPos[] = new int[width*height];
 						int NextPFrameNewPos[] = new int[width*height];
@@ -726,20 +733,54 @@ public class mainWindow extends JFrame implements ActionListener{
 						//Take the difference between the current Bframe and the AverageNewPos 
 						for(int k=0; k<width; k++) {
 							for(int l=0; l<height; l++) {
-								BResidual[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
-
-								if(m == 0) {
-									Yres = BResidual;
+								
+								BResidual1[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-PastIFrameNewPos[(l*width)+k];
+								BResidual2[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-NextPFrameNewPos[(l*width)+k];
+								BResidual3[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
+							
+								if(BResidual1[(l*width)+k] < 0) {
+									BResidual1[(l*width)+k] = 0;
 								}
-								else if(m == 1) {
-									Ures = BResidual;
+								else if(BResidual2[(l*width)+k] < 0) {
+									BResidual2[(l*width)+k] = 0;
 								}
-								else {
-									Vres = BResidual;
+								else if(BResidual3[(l*width)+k] < 0) {
+									BResidual3[(l*width)+k] = 0;
 								}
+								
+								sumB1 += BResidual1[(l*width)+k];
+								sumB2 += BResidual2[(l*width)+k];
+								sumB3 += BResidual3[(l*width)+k];
+								
+								
 							}
 						}
-
+						
+						sumB1 = Math.abs(sumB1);
+						sumB2 = Math.abs(sumB2);
+						sumB3 = Math.abs(sumB3);
+						
+						
+						if(sumB1 < sumB2 && sumB1 < sumB3) {
+							BResidual = BResidual1;
+						}
+						else if(sumB2 < sumB1 && sumB2 < sumB3) {
+							BResidual = BResidual2;
+						}
+						else {
+							BResidual = BResidual3;
+						}
+						
+						if(m == 0) {
+							Yres = BResidual;
+						}
+						else if(m == 1) {
+							Ures = BResidual;
+						}
+						else {
+							Vres = BResidual;
+						}
+						
 						if(m == 0) {
 							currentFrame.add(Yres);
 						}
@@ -782,6 +823,13 @@ public class mainWindow extends JFrame implements ActionListener{
 						int[] Vres = new int[width*height];
 
 						int BResidual[] = new int[width*height];
+						int BResidual1[] = new int[width*height];
+						int BResidual2[] = new int[width*height];
+						int BResidual3[] = new int[width*height];
+						
+						int sumB1 = 0;
+						int sumB2 = 0;
+						int sumB3 = 0;
 						
 						int PastPFrameNewPos[] = new int[width*height];
 						int NextPFrameNewPos[] = new int[width*height];
@@ -821,18 +869,32 @@ public class mainWindow extends JFrame implements ActionListener{
 						//Take the difference between the current Bframe and the AverageNewPos 
 						for(int k=0; k<width; k++) {
 							for(int l=0; l<height; l++) {
-								BResidual[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
-
-								if(m == 0) {
-									Yres = BResidual;
-								}
-								else if(m == 1) {
-									Ures = BResidual;
-								}
-								else {
-									Vres = BResidual;
-								}
+								
+								BResidual1[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-PastPFrameNewPos[(l*width)+k];
+								BResidual2[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-NextPFrameNewPos[(l*width)+k];
+								BResidual3[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
+							
+								sumB1 += BResidual1[(l*width)+k];
+								sumB2 += BResidual2[(l*width)+k];
+								sumB3 += BResidual3[(l*width)+k];
+								
+								
 							}
+						}
+						
+						sumB1 = Math.abs(sumB1);
+						sumB2 = Math.abs(sumB2);
+						sumB3 = Math.abs(sumB3);
+						
+						
+						if(sumB1 < sumB2 && sumB1 < sumB3) {
+							BResidual = BResidual1;
+						}
+						else if(sumB2 < sumB1 && sumB2 < sumB3) {
+							BResidual = BResidual2;
+						}
+						else {
+							BResidual = BResidual3;
 						}
 
 						if(m == 0) {
@@ -882,6 +944,13 @@ public class mainWindow extends JFrame implements ActionListener{
 						int[] Vres = new int[width*height];
 
 						int BResidual[] = new int[width*height];
+						int BResidual1[] = new int[width*height];
+						int BResidual2[] = new int[width*height];
+						int BResidual3[] = new int[width*height];
+						
+						int sumB1 = 0;
+						int sumB2 = 0;
+						int sumB3 = 0;
 						
 						int PastPFrameNewPos[] = new int[width*height];
 						int NextIFrameNewPos[] = new int[width*height];
@@ -921,18 +990,32 @@ public class mainWindow extends JFrame implements ActionListener{
 						//Take the difference between the current Bframe and the AverageNewPos 
 						for(int k=0; k<width; k++) {
 							for(int l=0; l<height; l++) {
-								BResidual[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
-
-								if(m == 0) {
-									Yres = BResidual;
-								}
-								else if(m == 1) {
-									Ures = BResidual;
-								}
-								else {
-									Vres = BResidual;
-								}
+								
+								BResidual1[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-PastPFrameNewPos[(l*width)+k];
+								BResidual2[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-NextIFrameNewPos[(l*width)+k];
+								BResidual3[(l*width)+k] = unblockedcurrentBFrame.get(m)[(l*width)+k]-AverageNewPos[(l*width)+k];
+							
+								sumB1 += BResidual1[(l*width)+k];
+								sumB2 += BResidual2[(l*width)+k];
+								sumB3 += BResidual3[(l*width)+k];
+								
+								
 							}
+						}
+						
+						sumB1 = Math.abs(sumB1);
+						sumB2 = Math.abs(sumB2);
+						sumB3 = Math.abs(sumB3);
+						
+						
+						if(sumB1 < sumB2 && sumB1 < sumB3) {
+							BResidual = BResidual1;
+						}
+						else if(sumB2 < sumB1 && sumB2 < sumB3) {
+							BResidual = BResidual2;
+						}
+						else {
+							BResidual = BResidual3;
 						}
 
 						if(m == 0) {
