@@ -1,4 +1,5 @@
-# CMPT 365 Term Project: Video Compression
+# Term Project: Video Compression
+## Note: I'm not listed as a contributor, but all my work was done in the 3 branches (intra, motion, and final_frame). Sorry for any confusion.
 
 ## Objective:
 Learn essential parts of MPEG and H.264/H.265 video compression, and some multimedia programming skills.
